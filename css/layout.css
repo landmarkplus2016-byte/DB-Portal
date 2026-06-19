@@ -3,9 +3,6 @@
   display: flex;
   min-height: 100vh;
 }
-[dir="rtl"] #app {
-  flex-direction: row-reverse;
-}
 
 /* Sidebar */
 .sidebar {
