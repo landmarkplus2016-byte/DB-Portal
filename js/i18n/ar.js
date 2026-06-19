@@ -64,6 +64,8 @@ export const ar = {
   section_acceptance: "الاستلام",
   section_files: "الملفات",
   no_value: "لا توجد قيمة",
+  site_not_found: "الموقع غير موجود.",
+  copied_to_clipboard: "تم نسخ المسار إلى الحافظة",
 
   // Site form
   btn_save: "حفظ التغييرات",
@@ -75,6 +77,7 @@ export const ar = {
   file_path: "المسار",
   file_section: "القسم",
   btn_add: "إضافة",
+  site_saved: "تم حفظ الموقع",
 
   // Export
   export_filters: "عوامل التصفية",

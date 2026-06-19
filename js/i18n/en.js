@@ -64,6 +64,8 @@ export const en = {
   section_acceptance: "Acceptance",
   section_files: "Files",
   no_value: "No value",
+  site_not_found: "Site not found.",
+  copied_to_clipboard: "Path copied to clipboard",
 
   // Site form
   btn_save: "Save changes",
@@ -75,6 +77,7 @@ export const en = {
   file_path: "Path",
   file_section: "Section",
   btn_add: "Add",
+  site_saved: "Site saved",
 
   // Export
   export_filters: "Filters",
