@@ -15,6 +15,11 @@ export function setCurrentUser(user) {
   CURRENT_USER = user;
 }
 
+export function setRoute(route, param = null) {
+  ROUTE = route;
+  ROUTE_PARAM = param;
+}
+
 export function markDirty() {
   IS_DIRTY = true;
 }

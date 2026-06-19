@@ -1,0 +1,238 @@
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: var(--radius-control);
+  padding: 9px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-ghost:hover {
+  background: var(--bg);
+}
+.btn-danger {
+  background: #fbeaea;
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: #f6d4d4;
+}
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Cards / generic */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.pad-md {
+  padding: 18px;
+}
+.pad-lg {
+  padding: 24px;
+}
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Status badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.badge.Complete {
+  background: var(--st-complete-bg);
+  color: var(--st-complete-tx);
+}
+.badge.InProgress {
+  background: var(--st-prog-bg);
+  color: var(--st-prog-tx);
+}
+.badge.New {
+  background: var(--st-new-bg);
+  color: var(--st-new-tx);
+}
+
+/* Boolean chips (checkbox field display) */
+.chip-yes {
+  display: inline-block;
+  background: var(--st-complete-bg);
+  color: var(--st-complete-tx);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.chip-no {
+  display: inline-block;
+  background: #eee;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* Inputs */
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 5px;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: 9px 10px;
+  font-size: 13.5px;
+  background: #fff;
+  color: var(--text);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px #3d5af11f;
+}
+.field .err {
+  color: var(--danger);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+/* Modal */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 22, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 420px;
+  max-width: 92vw;
+  padding: 22px;
+}
+.modal h3 {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  inset-inline-end: 20px;
+  background: var(--text);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 9px;
+  font-size: 13px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  z-index: 99;
+}
+.toast.error {
+  background: var(--danger);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border-inline: none;
+  border-top: none;
+}
+.tab.active {
+  color: var(--primary-dark);
+  border-bottom-color: var(--primary);
+}
+.tabdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* File row */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.file-row .ftag {
+  background: var(--bg);
+  color: var(--text2);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-weight: 700;
+}
+.file-row .fname {
+  font-weight: 600;
+}
+.file-row .fdate {
+  color: var(--muted);
+  margin-inline-start: auto;
+}
+.file-row a {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}

@@ -55,6 +55,7 @@ export const en = {
   // Site detail
   back: "Back",
   btn_open_folder: "Open Folder",
+  btn_open_file: "Open file",
   btn_copy_path: "Copy Path",
   no_files: "No files linked yet.",
   section_acq: "ACQ",

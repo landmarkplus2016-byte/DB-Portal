@@ -55,6 +55,7 @@ export const ar = {
   // Site detail
   back: "رجوع",
   btn_open_folder: "فتح المجلد",
+  btn_open_file: "فتح الملف",
   btn_copy_path: "نسخ المسار",
   no_files: "لا توجد ملفات مرتبطة بعد.",
   section_acq: "ACQ",

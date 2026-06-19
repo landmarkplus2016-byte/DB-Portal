@@ -1,0 +1,208 @@
+/* App shell */
+#app {
+  display: flex;
+  min-height: 100vh;
+}
+[dir="rtl"] #app {
+  flex-direction: row-reverse;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 230px;
+  flex: 0 0 230px;
+  background: var(--card);
+  border-inline-end: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 22px 8px;
+}
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+.logo-text b {
+  display: block;
+  font-size: 14.5px;
+  color: var(--text);
+}
+.logo-text span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 13.5px;
+  font-weight: 500;
+  border-inline-start: 3px solid transparent;
+}
+.nav a .ic {
+  width: 17px;
+  text-align: center;
+  font-size: 14px;
+}
+.nav a:hover {
+  background: #f1f2f8;
+}
+.nav a.active {
+  background: #eef1ff;
+  color: var(--primary-dark);
+  border-inline-start-color: var(--primary);
+}
+.sidebar-bottom {
+  margin-top: auto;
+}
+.langtoggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.langtoggle button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.langtoggle button.active {
+  background: var(--card);
+  color: var(--primary-dark);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.userbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 9px;
+  background: var(--bg);
+  margin-bottom: 8px;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 32px;
+}
+.userbox .name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.rolebadge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: #eef1ff;
+  color: var(--primary-dark);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.signout {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.signout:hover {
+  background: #fbeaea;
+  color: var(--danger);
+  border-color: #f3c9c9;
+}
+
+/* Main column */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.topbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+.topbar .sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dirty-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--warning);
+  font-weight: 600;
+}
+.dirty-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 26px;
+}
