@@ -206,6 +206,33 @@
   background: var(--success);
 }
 
+/* Toggle pill (switch) */
+.toggle-pill {
+  width: 38px;
+  height: 21px;
+  border-radius: 99px;
+  background: #ddd;
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+}
+.toggle-pill.on {
+  background: var(--success);
+}
+.toggle-pill .knob {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  transition: 0.15s;
+}
+.toggle-pill.on .knob {
+  inset-inline-start: 19px;
+}
+
 /* File row */
 .file-row {
   display: flex;
