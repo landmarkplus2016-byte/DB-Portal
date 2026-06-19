@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>LMP Acquisition DB — Prototype</title>
+<style>
+:root{
+  --bg:#f5f6fa; --card:#ffffff; --border:#e2e4ed;
+  --text:#1a1d2e; --text2:#4a4f6a; --muted:#9095b0;
+  --primary:#3d5af1; --primary-dark:#2d47d4;
+  --success:#16a34a; --warning:#d97706; --danger:#e05252;
+  --purple:#7c3aed; --teal:#0d9488;
+  --st-complete-bg:#dcfce7; --st-complete-tx:#15803d;
+  --st-prog-bg:#fef3c7; --st-prog-tx:#b45309;
+  --st-new-bg:#ede9fe; --st-new-tx:#6d28d9;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);}
+[dir="rtl"] body{font-family:'Segoe UI','Tahoma',system-ui,sans-serif;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* ---------- App shell ---------- */
+#app{display:flex;min-height:100vh;}
+[dir="rtl"] #app{flex-direction:row-reverse;}
+
+/* Sidebar */
+.sidebar{width:230px;flex:0 0 230px;background:var(--card);border-inline-end:1px solid var(--border);
+  display:flex;flex-direction:column;padding:20px 14px;}
+.logo{display:flex;align-items:center;gap:10px;padding:6px 8px 22px 8px;}
+.logo-mark{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:.3px;}
+.logo-text b{display:block;font-size:14.5px;color:var(--text);}
+.logo-text span{display:block;font-size:11px;color:var(--muted);}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;text-decoration:none;
+  color:var(--text2);font-size:13.5px;font-weight:500;border-inline-start:3px solid transparent;}
+.nav a .ic{width:17px;text-align:center;font-size:14px;}
+.nav a:hover{background:#f1f2f8;}
+.nav a.active{background:#eef1ff;color:var(--primary-dark);border-inline-start-color:var(--primary);}
+.nav-sep{height:1px;background:var(--border);margin:10px 4px;}
+.sidebar-bottom{margin-top:auto;}
+.langtoggle{display:flex;gap:4px;background:var(--bg);padding:3px;border-radius:8px;margin-bottom:14px;}
+.langtoggle button{flex:1;border:none;background:transparent;padding:6px 0;border-radius:6px;font-size:12px;font-weight:700;color:var(--muted);}
+.langtoggle button.active{background:var(--card);color:var(--primary-dark);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.userbox{display:flex;align-items:center;gap:9px;padding:8px;border-radius:9px;background:var(--bg);margin-bottom:8px;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;flex:0 0 32px;}
+.userbox .name{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3;}
+.rolebadge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;background:#eef1ff;color:var(--primary-dark);font-weight:700;margin-top:2px;}
+.signout{width:100%;border:1px solid var(--border);background:var(--card);color:var(--text2);padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;}
+.signout:hover{background:#fbeaea;color:var(--danger);border-color:#f3c9c9;}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 26px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.topbar h1{font-size:18px;margin:0;}
+.topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.topbar-actions{display:flex;align-items:center;gap:10px;}
+.dirty-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--warning);font-weight:600;}
+.dirty-dot{width:7px;height:7px;border-radius:50%;background:var(--warning);}
+.content{flex:1;overflow-y:auto;padding:24px 26px;}
+
+/* Buttons */
+.btn{border:none;border-radius:6px;padding:9px 15px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-ghost:hover{background:var(--bg);}
+.btn-danger{background:#fbeaea;color:var(--danger);}
+.btn-danger:hover{background:#f6d4d4;}
+.btn-sm{padding:6px 10px;font-size:12px;}
+
+/* Cards / generic */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+.pad-md{padding:18px;}
+.pad-lg{padding:24px;}
+.grid{display:grid;gap:16px;}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;}
+.badge.Complete{background:var(--st-complete-bg);color:var(--st-complete-tx);}
+.badge.InProgress{background:var(--st-prog-bg);color:var(--st-prog-tx);}
+.badge.New{background:var(--st-new-bg);color:var(--st-new-tx);}
+
+/* Login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:
+  radial-gradient(circle at 20% 20%, #eef1ff 0%, var(--bg) 45%);}
+.login-card{width:380px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:30px;
+  box-shadow:0 10px 30px rgba(30,40,90,.07);}
+.login-logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px;}
+.login-logo .logo-mark{width:50px;height:50px;font-size:16px;margin-bottom:10px;}
+.login-logo h2{margin:0;font-size:18px;}
+.login-logo p{margin:3px 0 0;font-size:12.5px;color:var(--muted);}
+.login-langtoggle{display:flex;justify-content:center;margin-bottom:18px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:9px 10px;
+  font-size:13.5px;background:#fff;color:var(--text);}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px #3d5af11f;}
+.field .err{color:var(--danger);font-size:11.5px;margin-top:4px;}
+.upload-box{border:1.5px dashed var(--border);border-radius:10px;padding:14px;text-align:center;margin-bottom:18px;background:#fafbfe;}
+.upload-box p{font-size:12px;color:var(--text2);margin:0 0 9px;}
+.note-ok{background:#eafbef;color:var(--success);font-size:12px;padding:7px 10px;border-radius:7px;margin-top:8px;}
+.note-bad{background:#fdeded;color:var(--danger);font-size:12px;padding:7px 10px;border-radius:7px;margin-top:8px;}
+.login-err{background:#fdeded;color:var(--danger);font-size:12.5px;padding:8px 10px;border-radius:7px;margin-top:10px;text-align:center;}
+.hint{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.kpi{padding:18px;}
+.kpi .num{font-size:26px;font-weight:800;}
+.kpi .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+.spark{display:flex;gap:3px;align-items:flex-end;height:24px;margin-top:10px;}
+.spark div{flex:1;border-radius:2px;}
+
+.charts-row{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-title{font-size:13px;font-weight:700;margin:0 0 14px;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;}
+.bar-row .lbl{width:90px;color:var(--text2);flex:0 0 90px;}
+.bar-track{flex:1;background:var(--bg);border-radius:5px;height:14px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;}
+.bar-row .val{width:24px;text-align:end;font-weight:700;color:var(--text2);}
+
+.activity-list{display:flex;flex-direction:column;gap:0;}
+.activity-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.activity-item:last-child{border-bottom:none;}
+.adot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 8px;}
+.activity-item .txt{color:var(--text);}
+.activity-item .time{color:var(--muted);font-size:11px;margin-top:2px;}
+
+/* Site list */
+.filters-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.filters-row input[type=text]{flex:1;min-width:200px;border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:13px;}
+.filters-row select{border:1px solid var(--border);border-radius:6px;padding:9px 10px;font-size:13px;background:#fff;}
+.results-count{font-size:12px;color:var(--muted);margin-bottom:10px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:start;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);
+  border-bottom:1px solid var(--border);}
+tbody td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+tbody tr:hover{background:#fafbfe;cursor:pointer;}
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-state .ic{font-size:34px;margin-bottom:10px;}
+
+/* Site detail */
+.detail-head{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+.section-panel{margin-bottom:16px;}
+.section-head{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--border);}
+.section-dot{width:9px;height:9px;border-radius:50%;}
+.section-head h3{margin:0;font-size:13.5px;}
+.field-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:18px;}
+.field-disp .lbl{font-size:11px;color:var(--muted);margin-bottom:3px;}
+.field-disp .val{font-size:13px;color:var(--text);font-weight:500;}
+.field-disp .val.muted{color:var(--muted);font-weight:400;font-style:italic;}
+.chip-yes{display:inline-block;background:var(--st-complete-bg);color:var(--st-complete-tx);font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;}
+.chip-no{display:inline-block;background:#eee;color:var(--muted);font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;}
+
+.warn-note{display:flex;gap:8px;background:#fff7e6;border:1px solid #f6dca6;color:#92660b;font-size:12px;padding:10px 12px;border-radius:8px;margin:10px 0;}
+.path-row{display:flex;align-items:center;gap:10px;padding:12px 18px;flex-wrap:wrap;}
+.path-row code{background:var(--bg);padding:5px 9px;border-radius:6px;font-size:12px;color:var(--text2);}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 18px;border-top:1px solid var(--border);font-size:12.5px;}
+.file-row .ftag{background:var(--bg);color:var(--text2);font-size:10.5px;padding:2px 7px;border-radius:99px;font-weight:700;}
+.file-row .fname{font-weight:600;}
+.file-row .fdate{color:var(--muted);margin-inline-start:auto;}
+.file-row a{color:var(--primary);text-decoration:none;font-size:12px;font-weight:600;}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;
+  display:flex;align-items:center;gap:6px;background:transparent;border-inline:none;border-top:none;}
+.tab.active{color:var(--primary-dark);border-bottom-color:var(--primary);}
+.tabdot{width:6px;height:6px;border-radius:50%;background:var(--success);}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.cb-field{display:flex;align-items:center;gap:8px;margin-top:24px;}
+.cb-field input{width:16px;height:16px;}
+
+/* export cards */
+.export-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px;}
+.export-card{padding:22px;text-align:center;transition:.15s;}
+.export-card:hover{border-color:var(--primary);box-shadow:0 6px 18px rgba(61,90,241,.1);transform:translateY(-2px);}
+.export-card .eicon{font-size:30px;margin-bottom:10px;}
+.export-card h4{margin:4px 0;}
+.export-card p{font-size:12px;color:var(--muted);margin:0 0 14px;}
+
+/* admin */
+.admin-tabs{display:flex;gap:4px;margin-bottom:18px;}
+.admin-tabs button{padding:9px 16px;border:1px solid var(--border);background:var(--card);border-radius:8px;font-size:13px;font-weight:600;color:var(--text2);}
+.admin-tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.toggle-pill{width:38px;height:21px;border-radius:99px;background:#ddd;position:relative;cursor:pointer;display:inline-block;}
+.toggle-pill.on{background:var(--success);}
+.toggle-pill .knob{width:17px;height:17px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:.15s;}
+.toggle-pill.on .knob{left:19px;}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(20,22,40,.45);display:flex;align-items:center;justify-content:center;z-index:50;}
+.modal{background:#fff;border-radius:12px;width:420px;max-width:92vw;padding:22px;}
+.modal h3{margin:0 0 16px;font-size:15px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+
+.toast{position:fixed;bottom:20px;inset-inline-end:20px;background:var(--text);color:#fff;padding:12px 18px;border-radius:9px;
+  font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:99;}
+.toast.error{background:var(--danger);}
+
+::-webkit-scrollbar{width:9px;}
+::-webkit-scrollbar-thumb{background:#d6d9e6;border-radius:99px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ================= I18N ================= */
+const I18N = {
+en:{
+ app_name:"LMP Acquisition DB", app_sub:"Site Acquisition Tracker",
+ nav_dashboard:"Dashboard", nav_sites:"Sites", nav_add:"Add Site", nav_export:"Export", nav_admin:"Admin",
+ sign_out:"Sign out",
+ upload_json_prompt:"No data loaded yet. Upload the master JSON file from the shared drive to begin.",
+ btn_upload_json:"Upload JSON file", username:"Username", password:"Password", btn_sign_in:"Sign in",
+ invalid_creds:"Invalid username or password", inactive_acct:"This account is deactivated",
+ bootstrap_hint:"First time? Use admin / admin123 to get started.",
+ upload_ok:"File loaded successfully.", upload_bad:"Couldn't read this file — make sure it's a valid export.",
+ kpi_total:"Total Sites", kpi_complete:"Complete", kpi_in_progress:"In Progress", kpi_new:"New",
+ chart_by_typology:"Sites by Typology", chart_by_status:"Sites by Status", recent_activity:"Recent Activity",
+ sites_label:"sites", btn_add_site:"Add site",
+ search_placeholder:"Search by site ID, address, manager, owner…",
+ filter_status_all:"All statuses", filter_typology_all:"All typologies",
+ col_site_id:"Site ID", col_address:"Address", col_manager:"Acq. Manager", col_typology:"Typology",
+ col_status:"Status", col_updated:"Last Updated", col_actions:"Actions",
+ btn_view:"View", btn_edit:"Edit", empty_sites:"No sites match your filters.",
+ status_complete:"Complete", status_in_progress:"In progress", status_new:"New",
+ back:"Back", network_warning:"Files are stored on the company server. You must be on the company network or VPN to open them.",
+ btn_open_folder:"Open Folder", btn_copy_path:"Copy Path", no_files:"No files linked yet.",
+ section_acq:"ACQ", section_sta:"STA", section_construction:"Construction", section_acceptance:"Acceptance", section_files:"Files",
+ no_value:"No value", btn_save:"Save changes", btn_cancel:"Cancel",
+ field_required:"Site ID is required", field_duplicate:"This Site ID already exists",
+ add_file_link:"Add file link", file_name:"File name", file_path:"Path", file_section:"Section", btn_add:"Add",
+ export_filters:"Filters", export_status:"Status", export_typology:"Typology", export_manager:"Acq. Manager",
+ export_match:"sites match current filters", export_excel:"Excel (.xlsx)", export_excel_d:"Spreadsheet with all fields, one row per site.",
+ export_csv:"CSV", export_csv_d:"Plain comma-separated values for any tool.",
+ export_pdf:"PDF Site Cards", export_pdf_d:"One printable page per site.",
+ tab_users:"Users", tab_permissions:"Permissions", tab_audit:"Audit Log",
+ col_username:"Username", col_display_name:"Display Name", col_role:"Role", col_status_active:"Status",
+ btn_add_user:"Add user", role_admin:"Admin", role_data_entry:"Data Entry", role_viewer:"Viewer",
+ unsaved_changes:"Unsaved changes", btn_export_json:"Export JSON",
+ settings_title:"Settings", settings_base_path:"Server base path",
+ settings_base_path_note:"This change only affects new file path suggestions — existing file paths are unchanged.",
+ field_address:"Address",field_nominal_coords:"Nominal coordinates",field_option_coords:"Option coordinates",
+ field_dis_from_nom:"Dis from Nom",field_option:"Option",field_sf2_date:"SF2 Date",field_typology:"Typology",
+ field_sf3_comment:"SF3 comment",field_sf51_doc:"SF51 Doc.",field_sf3_date:"SF3 Date",field_contract_date:"Contract Date",
+ field_initial_pm_date:"Initial PM date",field_final_pm_date:"Final PM date",field_negotiator:"Negotiator",
+ field_surveyor:"Surveyor",field_survey_date:"Survey date",field_initial_permit_date:"Initial Permit date",
+ field_permitted_by:"Permitted by",field_power_source:"Power Source",field_acquisition_manager:"Acquisition Manager",
+ field_owner:"Owner",field_rental_value:"Rental Value",field_owner_phone:"Owner phone",
+ field_final_permit_date:"Final Permit date",field_environment_date:"Environment date",field_comments:"Comments",
+ field_agriculture_receipt:"Agriculture receipt",field_environment_receipt:"Environment receipt",
+ field_civil_aviation_receipt:"Civil aviation receipt",field_pm_charge_receipt:"PM charge receipt",
+ field_cooperation:"Cooperation",field_agriculture_date:"Agriculture date",
+ field_consultant_office:"Consultant Office",field_sta_date:"STA Date",field_consultant_feedback:"Consultant feedback",
+ field_safety_certificate:"Safety Certificate",field_supervision_certificate:"Supervision Certificate",
+ field_post_certificate:"Post Certificate",field_verticality_certificate:"Verticality Certificate",
+ field_rfc:"RFC",field_rfi:"RFI",field_sf6:"SF6",field_construction_manager:"Con. Manager",
+ field_site_engineer:"Site Engineer",field_vf_site_establishment:"VF Site Estab.",
+ field_acceptance_manager:"Acceptance Manager",field_acceptance_engineer:"Acceptance Engineer",
+ field_vf_task_owner:"VF Task owner",field_pac:"PAC",field_fac:"FAC",field_site_snags:"Site Snags",
+ field_site_id:"Site ID",
+ typology_Rooftop:"Rooftop", typology_Greenfield:"Greenfield", typology_Indoor:"Indoor", typology_Streetlevel:"Street level",
+},
+ar:{
+ app_name:"قاعدة بيانات استحواذ المواقع", app_sub:"متابعة استحواذ المواقع",
+ nav_dashboard:"لوحة التحكم", nav_sites:"المواقع", nav_add:"إضافة موقع", nav_export:"تصدير", nav_admin:"الإدارة",
+ sign_out:"تسجيل الخروج",
+ upload_json_prompt:"لا توجد بيانات محمّلة بعد. ارفع ملف JSON الرئيسي من المحرك المشترك للبدء.",
+ btn_upload_json:"رفع ملف JSON", username:"اسم المستخدم", password:"كلمة المرور", btn_sign_in:"تسجيل الدخول",
+ invalid_creds:"اسم المستخدم أو كلمة المرور غير صحيحة", inactive_acct:"هذا الحساب معطّل",
+ bootstrap_hint:"أول مرة؟ استخدم admin / admin123 للبدء.",
+ upload_ok:"تم تحميل الملف بنجاح.", upload_bad:"تعذّرت قراءة الملف — تأكد من أنه ملف تصدير صالح.",
+ kpi_total:"إجمالي المواقع", kpi_complete:"مكتمل", kpi_in_progress:"قيد التنفيذ", kpi_new:"جديد",
+ chart_by_typology:"المواقع حسب النوع", chart_by_status:"المواقع حسب الحالة", recent_activity:"النشاط الأخير",
+ sites_label:"موقع", btn_add_site:"إضافة موقع",
+ search_placeholder:"ابحث برقم الموقع، العنوان، المدير، المالك…",
+ filter_status_all:"كل الحالات", filter_typology_all:"كل الأنواع",
+ col_site_id:"رقم الموقع", col_address:"العنوان", col_manager:"مدير الاستحواذ", col_typology:"النوع",
+ col_status:"الحالة", col_updated:"آخر تحديث", col_actions:"إجراءات",
+ btn_view:"عرض", btn_edit:"تعديل", empty_sites:"لا توجد مواقع مطابقة لعوامل التصفية.",
+ status_complete:"مكتمل", status_in_progress:"قيد التنفيذ", status_new:"جديد",
+ back:"رجوع", network_warning:"الملفات مخزّنة على خادم الشركة. يجب أن تكون متصلاً بشبكة الشركة أو VPN لفتحها.",
+ btn_open_folder:"فتح المجلد", btn_copy_path:"نسخ المسار", no_files:"لا توجد ملفات مرتبطة بعد.",
+ section_acq:"ACQ", section_sta:"STA", section_construction:"الإنشاء", section_acceptance:"الاستلام", section_files:"الملفات",
+ no_value:"لا توجد قيمة", btn_save:"حفظ التغييرات", btn_cancel:"إلغاء",
+ field_required:"رقم الموقع مطلوب", field_duplicate:"رقم الموقع هذا موجود بالفعل",
+ add_file_link:"إضافة رابط ملف", file_name:"اسم الملف", file_path:"المسار", file_section:"القسم", btn_add:"إضافة",
+ export_filters:"عوامل التصفية", export_status:"الحالة", export_typology:"النوع", export_manager:"مدير الاستحواذ",
+ export_match:"موقع مطابق لعوامل التصفية الحالية", export_excel:"إكسل (.xlsx)", export_excel_d:"جدول بكل الحقول، صف لكل موقع.",
+ export_csv:"CSV", export_csv_d:"قيم مفصولة بفواصل لأي أداة.",
+ export_pdf:"بطاقات PDF", export_pdf_d:"صفحة واحدة قابلة للطباعة لكل موقع.",
+ tab_users:"المستخدمون", tab_permissions:"الصلاحيات", tab_audit:"سجل التدقيق",
+ col_username:"اسم المستخدم", col_display_name:"الاسم الظاهر", col_role:"الدور", col_status_active:"الحالة",
+ btn_add_user:"إضافة مستخدم", role_admin:"مدير", role_data_entry:"إدخال بيانات", role_viewer:"مشاهد",
+ unsaved_changes:"تغييرات غير محفوظة", btn_export_json:"تصدير JSON",
+ settings_title:"الإعدادات", settings_base_path:"مسار الخادم الأساسي",
+ settings_base_path_note:"هذا التغيير يؤثر فقط على اقتراحات المسارات الجديدة — المسارات الحالية لا تتغير.",
+ field_address:"العنوان",field_nominal_coords:"الإحداثيات الاسمية",field_option_coords:"إحداثيات الخيار",
+ field_dis_from_nom:"المسافة من الاسمي",field_option:"الخيار",field_sf2_date:"تاريخ SF2",field_typology:"النوع",
+ field_sf3_comment:"ملاحظة SF3",field_sf51_doc:"مستند SF51",field_sf3_date:"تاريخ SF3",field_contract_date:"تاريخ العقد",
+ field_initial_pm_date:"تاريخ PM الأولي",field_final_pm_date:"تاريخ PM النهائي",field_negotiator:"المفاوض",
+ field_surveyor:"المساح",field_survey_date:"تاريخ المسح",field_initial_permit_date:"تاريخ الترخيص الأولي",
+ field_permitted_by:"مُرخّص من",field_power_source:"مصدر الطاقة",field_acquisition_manager:"مدير الاستحواذ",
+ field_owner:"المالك",field_rental_value:"قيمة الإيجار",field_owner_phone:"هاتف المالك",
+ field_final_permit_date:"تاريخ الترخيص النهائي",field_environment_date:"تاريخ البيئة",field_comments:"ملاحظات",
+ field_agriculture_receipt:"إيصال الزراعة",field_environment_receipt:"إيصال البيئة",
+ field_civil_aviation_receipt:"إيصال الطيران المدني",field_pm_charge_receipt:"إيصال رسوم PM",
+ field_cooperation:"التعاون",field_agriculture_date:"تاريخ الزراعة",
+ field_consultant_office:"مكتب الاستشاري",field_sta_date:"تاريخ STA",field_consultant_feedback:"ملاحظات الاستشاري",
+ field_safety_certificate:"شهادة السلامة",field_supervision_certificate:"شهادة الإشراف",
+ field_post_certificate:"شهادة لاحقة",field_verticality_certificate:"شهادة الرأسية",
+ field_rfc:"RFC",field_rfi:"RFI",field_sf6:"SF6",field_construction_manager:"مدير الإنشاء",
+ field_site_engineer:"مهندس الموقع",field_vf_site_establishment:"تأسيس موقع VF",
+ field_acceptance_manager:"مدير الاستلام",field_acceptance_engineer:"مهندس الاستلام",
+ field_vf_task_owner:"مسؤول مهمة VF",field_pac:"PAC",field_fac:"FAC",field_site_snags:"ملاحظات الموقع",
+ field_site_id:"رقم الموقع",
+ typology_Rooftop:"سطح", typology_Greenfield:"أرض مفتوحة", typology_Indoor:"داخلي", typology_Streetlevel:"مستوى الشارع",
+}};
+let LANG = localStorage.getItem('lmp_lang') || 'en';
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
+function setLanguage(l){
+  LANG = l; localStorage.setItem('lmp_lang', l);
+  document.documentElement.dir = l==='ar' ? 'rtl':'ltr';
+  document.documentElement.lang = l;
+  render();
+}
+
+/* ================= FIELD DEFS ================= */
+const ACQ_FIELDS = [
+ {key:'address',type:'text'},{key:'nominal_coords',type:'text'},{key:'option_coords',type:'text'},
+ {key:'dis_from_nom',type:'text'},{key:'option',type:'text'},{key:'sf2_date',type:'date'},
+ {key:'typology',type:'select',options:['Rooftop','Greenfield','Indoor','Street level']},
+ {key:'sf3_comment',type:'text'},{key:'sf51_doc',type:'text'},{key:'sf3_date',type:'date'},
+ {key:'contract_date',type:'date'},{key:'initial_pm_date',type:'date'},{key:'final_pm_date',type:'date'},
+ {key:'negotiator',type:'text'},{key:'surveyor',type:'text'},{key:'survey_date',type:'date'},
+ {key:'initial_permit_date',type:'date'},{key:'permitted_by',type:'text'},
+ {key:'power_source',type:'select',options:['Grid','Generator','Solar','Other']},
+ {key:'acquisition_manager',type:'text'},{key:'owner',type:'text'},{key:'rental_value',type:'text'},
+ {key:'owner_phone',type:'text'},{key:'final_permit_date',type:'date'},{key:'environment_date',type:'date'},
+ {key:'comments',type:'textarea'},
+ {key:'agriculture_receipt',type:'checkbox'},{key:'environment_receipt',type:'checkbox'},
+ {key:'civil_aviation_receipt',type:'checkbox'},{key:'pm_charge_receipt',type:'checkbox'},
+ {key:'cooperation',type:'checkbox'},{key:'agriculture_date',type:'date'},
+].map(f=>({...f,section:'acq',label_key:'field_'+f.key}));
+
+const STA_FIELDS = [
+ {key:'consultant_office',type:'text'},{key:'sta_date',type:'date'},{key:'consultant_feedback',type:'textarea'},
+ {key:'safety_certificate',type:'checkbox'},{key:'supervision_certificate',type:'checkbox'},
+ {key:'post_certificate',type:'checkbox'},{key:'verticality_certificate',type:'checkbox'},
+].map(f=>({...f,section:'sta',label_key:'field_'+f.key}));
+
+const CONSTRUCTION_FIELDS = [
+ {key:'rfc',type:'text'},{key:'rfi',type:'text'},{key:'sf6',type:'text'},
+ {key:'construction_manager',type:'text'},{key:'site_engineer',type:'text'},{key:'vf_site_establishment',type:'text'},
+].map(f=>({...f,section:'construction',label_key:'field_'+f.key}));
+
+const ACCEPTANCE_FIELDS = [
+ {key:'acceptance_manager',type:'text'},{key:'acceptance_engineer',type:'text'},{key:'vf_task_owner',type:'text'},
+ {key:'pac',type:'checkbox'},{key:'fac',type:'checkbox'},{key:'site_snags',type:'textarea'},
+].map(f=>({...f,section:'acceptance',label_key:'field_'+f.key}));
+
+const SECTIONS = [
+ {key:'acq', fields:ACQ_FIELDS, color:'var(--primary)'},
+ {key:'sta', fields:STA_FIELDS, color:'var(--purple)'},
+ {key:'construction', fields:CONSTRUCTION_FIELDS, color:'var(--teal)'},
+ {key:'acceptance', fields:ACCEPTANCE_FIELDS, color:'var(--warning)'},
+];
+
+/* ================= UTILS ================= */
+function deriveStatus(site){
+  const fac = site.acceptance && site.acceptance.fac === true;
+  const contract = site.acq && site.acq.contract_date;
+  if(contract && fac) return 'Complete';
+  const anyFilled = [site.acq, site.sta, site.construction, site.acceptance].some(sec=>
+    sec && Object.entries(sec).some(([k,v])=> typeof v==='boolean'? v===true : !!v)
+  );
+  if(contract || anyFilled) return 'In progress';
+  return 'New';
+}
+function statusKey(s){ return s==='In progress' ? 'InProgress' : s; }
+function statusLabel(s){ return s==='Complete'?t('status_complete'): s==='In progress'?t('status_in_progress'):t('status_new'); }
+
+function filterSitesByPermissions(sites, user){
+  if(!user) return [];
+  if(user.role==='admin' || user.site_access==='all') return sites;
+  if(user.site_access==='assigned') return sites.filter(s=> (user.allowed_sites||[]).includes(s.site_id));
+  if(user.site_access==='region') return sites.filter(s=> (user.allowed_regions||[]).some(r=> (s.acq.address||'').includes(r)));
+  return sites;
+}
+function canEditSite(user){
+  if(!user) return false;
+  if(user.role==='admin') return true;
+  if(user.role==='data_entry') return true;
+  return false;
+}
+function buildFolderPath(siteId, basePath){
+  let bp = basePath.endsWith('\\') ? basePath : basePath+'\\';
+  return bp+siteId+'\\';
+}
+function toFileUrl(p){ return 'file:///'+p.replace(/\\/g,'/'); }
+function fmtDate(d){ if(!d) return ''; try{ const dt=new Date(d); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;} }
+function initials(name){ return (name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+function fileIcon(name){ const ext=(name||'').split('.').pop().toLowerCase();
+  if(ext==='pdf') return '📄'; if(['doc','docx'].includes(ext)) return '📝'; if(['jpg','jpeg','png'].includes(ext)) return '🖼️'; return '📎'; }
+
+/* ================= MOCK DATA ================= */
+const BOOTSTRAP_ADMIN = {user_id:'bootstrap-admin',username:'admin',password:'admin123',role:'admin',
+  display_name:'Administrator',active:true,site_access:'all',allowed_regions:[],allowed_sites:[],
+  can_export:true,can_upload_files:true,created_at:'',created_by:'system'};
+
+function makeMockData(){
+  const users = [
+    BOOTSTRAP_ADMIN,
+    {user_id:'u001',username:'ahmed.hassan',password:'pass123',role:'data_entry',display_name:'Ahmed Hassan',
+      active:true,site_access:'all',allowed_regions:[],allowed_sites:[],can_export:true,can_upload_files:true,created_at:'2024-01-01',created_by:'admin'},
+    {user_id:'u002',username:'rana.fawzy',password:'pass123',role:'viewer',display_name:'Rana Fawzy',
+      active:true,site_access:'region',allowed_regions:['Giza'],allowed_sites:[],can_export:true,can_upload_files:false,created_at:'2024-01-05',created_by:'admin'},
+    {user_id:'u003',username:'omar.said',password:'pass123',role:'viewer',display_name:'Omar Said',
+      active:false,site_access:'all',allowed_regions:[],allowed_sites:[],can_export:false,can_upload_files:false,created_at:'2024-02-10',created_by:'admin'},
+  ];
+  const blankSec = (keys)=> Object.fromEntries(keys.map(k=>[k, k.endsWith('receipt')||['fac','pac','cooperation','safety_certificate','supervision_certificate','post_certificate','verticality_certificate'].includes(k) ? false : '']));
+
+  const sites = [
+    {site_id:'EG-CAI-001',
+      acq:{address:'Nasr City, Cairo', nominal_coords:'30.0561,31.3424', option_coords:'', dis_from_nom:'12m', option:'A',
+        sf2_date:'2024-01-10', typology:'Rooftop', sf3_comment:'', sf51_doc:'SF51-001', sf3_date:'2024-01-20',
+        contract_date:'2024-02-15', initial_pm_date:'2024-02-20', final_pm_date:'2024-03-01',
+        negotiator:'Mona Adel', surveyor:'Khaled Sabry', survey_date:'2024-01-12', initial_permit_date:'2024-02-01',
+        permitted_by:'Cairo Governorate', power_source:'Grid', acquisition_manager:'Ahmed Hassan', owner:'Samir Tower Co.',
+        rental_value:'18,000 EGP', owner_phone:'01001234567', final_permit_date:'2024-03-10', environment_date:'2024-02-25',
+        comments:'Roof access negotiated with building owner.', agriculture_receipt:false, environment_receipt:true,
+        civil_aviation_receipt:true, pm_charge_receipt:true, cooperation:true, agriculture_date:''},
+      sta:{consultant_office:'Delta Consult', sta_date:'2024-03-15', consultant_feedback:'Structural load approved.',
+        safety_certificate:true, supervision_certificate:true, post_certificate:false, verticality_certificate:true},
+      construction:{rfc:'RFC-1001', rfi:'RFI-22', sf6:'SF6-09', construction_manager:'Hany Fathy', site_engineer:'Yara Naguib', vf_site_establishment:'Done'},
+      acceptance:{acceptance_manager:'Mostafa Adly', acceptance_engineer:'Lina Kamal', vf_task_owner:'Tarek Younis', pac:true, fac:true, site_snags:''},
+      files:[
+        {file_id:'f001',name:'Permit.pdf',path:'Z:\\sites\\EG-CAI-001\\Permit.pdf',section:'ACQ',added_by:'ahmed.hassan',added_at:'2024-03-10'},
+        {file_id:'f002',name:'Survey_Report.docx',path:'Z:\\sites\\EG-CAI-001\\Survey_Report.docx',section:'STA',added_by:'ahmed.hassan',added_at:'2024-03-15'},
+      ],
+      meta:{created_at:'2024-01-10T10:00:00',created_by:'ahmed.hassan',updated_at:'2024-03-15T14:00:00',updated_by:'ahmed.hassan'}},
+
+    {site_id:'EG-GIZ-014',
+      acq:{...blankSec(Object.keys(ACQ_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))), address:'6th of October, Giza',
+        typology:'Greenfield', contract_date:'2024-04-01', acquisition_manager:'Ahmed Hassan', owner:'Giza Agri Holdings',
+        negotiator:'Mona Adel', power_source:'Solar', comments:'Awaiting environmental clearance.'},
+      sta:blankSec(Object.keys(STA_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      construction:blankSec(Object.keys(CONSTRUCTION_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      acceptance:blankSec(Object.keys(ACCEPTANCE_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      files:[],
+      meta:{created_at:'2024-04-01T09:00:00',created_by:'ahmed.hassan',updated_at:'2024-04-02T11:00:00',updated_by:'ahmed.hassan'}},
+
+    {site_id:'EG-ALX-007',
+      acq:{...blankSec(Object.keys(ACQ_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))), address:'Sidi Gaber, Alexandria',
+        typology:'Indoor', power_source:'Generator', acquisition_manager:'Ahmed Hassan', owner:'Marina Plaza'},
+      sta:blankSec(Object.keys(STA_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      construction:blankSec(Object.keys(CONSTRUCTION_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      acceptance:blankSec(Object.keys(ACCEPTANCE_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      files:[],
+      meta:{created_at:'2024-05-01T09:00:00',created_by:'ahmed.hassan',updated_at:'2024-05-01T09:00:00',updated_by:'ahmed.hassan'}},
+
+    {site_id:'EG-CAI-022',
+      acq:{...blankSec(Object.keys(ACQ_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))), address:'Maadi, Cairo',
+        typology:'Street level', contract_date:'2024-03-05', power_source:'Grid', acquisition_manager:'Ahmed Hassan',
+        owner:'Maadi Developments', negotiator:'Sara Naeem', environment_receipt:true},
+      sta:{...blankSec(Object.keys(STA_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))), consultant_office:'Nile Eng', sta_date:'2024-03-20', safety_certificate:true},
+      construction:{...blankSec(Object.keys(CONSTRUCTION_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))), rfc:'RFC-1044', construction_manager:'Hany Fathy'},
+      acceptance:blankSec(Object.keys(ACCEPTANCE_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      files:[{file_id:'f003',name:'SiteSurvey.jpg',path:'Z:\\sites\\EG-CAI-022\\SiteSurvey.jpg',section:'STA',added_by:'ahmed.hassan',added_at:'2024-03-22'}],
+      meta:{created_at:'2024-03-05T09:00:00',created_by:'ahmed.hassan',updated_at:'2024-03-22T16:00:00',updated_by:'ahmed.hassan'}},
+
+    {site_id:'EG-GIZ-031',
+      acq:{...blankSec(Object.keys(ACQ_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{})))},
+      sta:blankSec(Object.keys(STA_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      construction:blankSec(Object.keys(CONSTRUCTION_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      acceptance:blankSec(Object.keys(ACCEPTANCE_FIELDS.reduce((a,f)=>({...a,[f.key]:1}),{}))),
+      files:[],
+      meta:{created_at:'2024-06-01T09:00:00',created_by:'ahmed.hassan',updated_at:'2024-06-01T09:00:00',updated_by:'ahmed.hassan'}},
+  ];
+
+  const audit_log = [
+    {timestamp:'2024-06-01T09:00:00',user:'ahmed.hassan',action:'CREATE',site_id:'EG-GIZ-031',field:'',old_value:'',new_value:''},
+    {timestamp:'2024-03-22T16:00:00',user:'ahmed.hassan',action:'UPDATE',site_id:'EG-CAI-022',field:'environment_receipt',old_value:'false',new_value:'true'},
+    {timestamp:'2024-03-15T14:00:00',user:'ahmed.hassan',action:'UPDATE',site_id:'EG-CAI-001',field:'fac',old_value:'false',new_value:'true'},
+    {timestamp:'2024-03-10T10:00:00',user:'ahmed.hassan',action:'UPDATE',site_id:'EG-CAI-001',field:'final_permit_date',old_value:'',new_value:'2024-03-10'},
+    {timestamp:'2024-03-05T09:00:00',user:'ahmed.hassan',action:'CREATE',site_id:'EG-CAI-022',field:'',old_value:'',new_value:''},
+    {timestamp:'2024-02-15T12:00:00',user:'ahmed.hassan',action:'UPDATE',site_id:'EG-CAI-001',field:'contract_date',old_value:'',new_value:'2024-02-15'},
+    {timestamp:'2024-01-10T10:00:00',user:'ahmed.hassan',action:'CREATE',site_id:'EG-CAI-001',field:'',old_value:'',new_value:''},
+  ];
+
+  return {meta:{version:'1.0',exported_at:null,exported_by:null,server_base_path:'Z:\\sites\\'}, users, sites, audit_log};
+}
+
+/* ================= STATE ================= */
+let DATA = makeMockData();
+let CURRENT_USER = null;
+let ROUTE = 'login'; // login | dashboard | sites | site-detail | site-form | export | admin
+let ROUTE_PARAM = null;
+let IS_DIRTY = false;
+let TOAST = null;
+let UI = { search:'', statusFilter:'', typologyFilter:'', formTab:'acq', adminTab:'users', loginErr:'', uploadMsg:null, editingUser:null, showAddUser:false };
+
+function markDirty(){ IS_DIRTY = true; }
+function showToast(msg, type){ TOAST = {msg, type}; render(); setTimeout(()=>{TOAST=null; render();}, 2000); }
+
+function go(route, param){ ROUTE = route; ROUTE_PARAM = param||null; render(); window.scrollTo(0,0); }
+
+/* ================= AUTH ================= */
+function login(username, password){
+  const u = DATA.users.find(x=>x.username===username && x.password===password);
+  if(!u) return {ok:false, error:t('invalid_creds')};
+  if(!u.active) return {ok:false, error:t('inactive_acct')};
+  CURRENT_USER = u;
+  return {ok:true};
+}
+function logout(){ CURRENT_USER = null; go('login'); }
+
+/* ================= RENDER HELPERS ================= */
+function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstElementChild; }
+function escapeHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function fieldValue(site, field){
+  const sec = site[field.section];
+  return sec ? sec[field.key] : '';
+}
+
+/* ================= RENDER: SIDEBAR / TOPBAR ================= */
+function renderSidebar(){
+  const role = CURRENT_USER.role;
+  const navItems = [
+    {route:'dashboard', label:t('nav_dashboard'), ic:'▦'},
+    {route:'sites', label:t('nav_sites'), ic:'☰'},
+    {route:'site-form-new', label:t('nav_add'), ic:'+', hide: role==='viewer'},
+    {route:'export', label:t('nav_export'), ic:'⇩', hide: !(CURRENT_USER.can_export || role==='admin')},
+  ];
+  const adminItem = role==='admin' ? `<a href="#" data-route="admin" class="${ROUTE==='admin'?'active':''}"><span class="ic">⚙</span>${t('nav_admin')}</a>` : '';
+  return `
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">LMP</div>
+      <div class="logo-text"><b>Acq. DB</b><span>${escapeHtml(t('app_sub'))}</span></div>
+    </div>
+    <div class="nav">
+      ${navItems.filter(n=>!n.hide).map(n=>{
+        const isActive = (n.route==='site-form-new' ? ROUTE==='site-form' && ROUTE_PARAM==='new' : ROUTE===n.route);
+        return `<a href="#" data-route="${n.route==='site-form-new'?'site-form-new':n.route}" class="${isActive?'active':''}"><span class="ic">${n.ic}</span>${n.label}</a>`;
+      }).join('')}
+      ${adminItem}
+    </div>
+    <div class="sidebar-bottom">
+      <div class="langtoggle">
+        <button data-lang="en" class="${LANG==='en'?'active':''}">EN</button>
+        <button data-lang="ar" class="${LANG==='ar'?'active':''}">ع</button>
+      </div>
+      <div class="userbox">
+        <div class="avatar">${initials(CURRENT_USER.display_name)}</div>
+        <div>
+          <div class="name">${escapeHtml(CURRENT_USER.display_name)}</div>
+          <span class="rolebadge">${t('role_'+CURRENT_USER.role)}</span>
+        </div>
+      </div>
+      <button class="signout" id="btn-signout">${t('sign_out')}</button>
+    </div>
+  </div>`;
+}
+
+function renderTopbar(title, sub, actionsHtml){
+  return `
+  <div class="topbar">
+    <div>
+      <h1>${title}</h1>
+      ${sub?`<div class="sub">${sub}</div>`:''}
+    </div>
+    <div class="topbar-actions">
+      ${IS_DIRTY ? `<div class="dirty-indicator"><span class="dirty-dot"></span>${t('unsaved_changes')}</div>`:''}
+      ${(CURRENT_USER.role==='admin'||CURRENT_USER.role==='data_entry') ? `<button class="btn btn-ghost btn-sm" id="btn-export-json">⇩ ${t('btn_export_json')}</button>` : ''}
+      ${actionsHtml||''}
+    </div>
+  </div>`;
+}
+
+/* ================= LOGIN PAGE ================= */
+function renderLogin(){
+  const onlyBootstrap = DATA.sites.length===0 && DATA.users.length===1;
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-langtoggle">
+        <div class="langtoggle" style="width:120px;">
+          <button data-lang="en" class="${LANG==='en'?'active':''}">EN</button>
+          <button data-lang="ar" class="${LANG==='ar'?'active':''}">ع</button>
+        </div>
+      </div>
+      <div class="login-logo">
+        <div class="logo-mark">LMP</div>
+        <h2>${t('app_name')}</h2>
+        <p>${t('app_sub')}</p>
+      </div>
+      ${onlyBootstrap ? `
+      <div class="upload-box">
+        <p>${t('upload_json_prompt')}</p>
+        <input type="file" id="json-upload" accept=".json" style="display:none;">
+        <button class="btn btn-ghost btn-sm" id="btn-upload-trigger">⇧ ${t('btn_upload_json')}</button>
+        ${UI.uploadMsg ? `<div class="${UI.uploadMsg.ok?'note-ok':'note-bad'}">${UI.uploadMsg.text}</div>` : ''}
+      </div>`:''}
+      <div class="field">
+        <label>${t('username')}</label>
+        <input type="text" id="login-username" placeholder="admin">
+      </div>
+      <div class="field">
+        <label>${t('password')}</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" id="btn-login">${t('btn_sign_in')}</button>
+      ${UI.loginErr ? `<div class="login-err">${UI.loginErr}</div>` : ''}
+      <div class="hint">${t('bootstrap_hint')}</div>
+    </div>
+  </div>`;
+}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  const sites = filterSitesByPermissions(DATA.sites, CURRENT_USER);
+  const counts = {Complete:0,'In progress':0,New:0};
+  sites.forEach(s=> counts[deriveStatus(s)]++ );
+  const typologyCounts = {};
+  sites.forEach(s=>{ const ty = s.acq.typology || '—'; typologyCounts[ty]=(typologyCounts[ty]||0)+1; });
+  const maxTy = Math.max(1,...Object.values(typologyCounts));
+  const total = sites.length || 1;
+
+  const kpiCard = (label, num, color)=>`
+   <div class="card kpi">
+     <div class="num" style="color:${color}">${num}</div>
+     <div class="lbl">${label}</div>
+     <div class="spark">${Array.from({length:7}).map(()=>`<div style="height:${10+Math.random()*14}px;background:${color}33;"></div>`).join('')}</div>
+   </div>`;
+
+  const donutSegs = [
+    {k:'Complete', c:'var(--success)'},{k:'In progress', c:'var(--warning)'},{k:'New', c:'var(--purple)'}
+  ];
+  let acc = 0;
+  const circumf = 2*Math.PI*54;
+  const donutPaths = donutSegs.map(seg=>{
+    const val = counts[seg.k]/total;
+    const dash = val*circumf;
+    const el = `<circle cx="70" cy="70" r="54" fill="none" stroke="${seg.c}" stroke-width="16"
+      stroke-dasharray="${dash} ${circumf-dash}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)"/>`;
+    acc += dash;
+    return el;
+  }).join('');
+
+  const auditSorted = [...DATA.audit_log].sort((a,b)=> new Date(b.timestamp)-new Date(a.timestamp)).slice(0,10);
+  const userByName = {}; DATA.users.forEach(u=> userByName[u.username]=u.display_name);
+  const actionColor = {CREATE:'var(--success)', UPDATE:'var(--primary)', DELETE:'var(--danger)'};
+
+  return `
+  ${renderTopbar(t('nav_dashboard'), new Date().toLocaleDateString(LANG==='ar'?'ar-EG':'en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),
+    CURRENT_USER.role!=='viewer' ? `<button class="btn btn-primary btn-sm" id="btn-add-site-top">+ ${t('btn_add_site')}</button>`:'')}
+  <div class="content">
+    <div class="kpis">
+      ${kpiCard(t('kpi_total'), sites.length, 'var(--primary)')}
+      ${kpiCard(t('kpi_complete'), counts.Complete, 'var(--success)')}
+      ${kpiCard(t('kpi_in_progress'), counts['In progress'], 'var(--warning)')}
+      ${kpiCard(t('kpi_new'), counts.New, 'var(--purple)')}
+    </div>
+    <div class="charts-row">
+      <div class="card pad-md">
+        <p class="chart-title">${t('chart_by_typology')}</p>
+        ${Object.entries(typologyCounts).map(([ty,c])=>`
+          <div class="bar-row">
+            <div class="lbl">${escapeHtml(ty)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(c/maxTy)*100}%;background:var(--primary);"></div></div>
+            <div class="val">${c}</div>
+          </div>`).join('') || `<p style="color:var(--muted);font-size:12.5px;">—</p>`}
+      </div>
+      <div class="card pad-md" style="display:flex;gap:18px;align-items:center;">
+        <div>
+          <p class="chart-title">${t('chart_by_status')}</p>
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            ${donutPaths}
+            <text x="70" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">${sites.length}</text>
+            <text x="70" y="84" text-anchor="middle" font-size="10" fill="var(--muted)">${t('sites_label')}</text>
+          </svg>
+        </div>
+        <div>
+          ${donutSegs.map(s=>`<div style="display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:7px;">
+            <span style="width:9px;height:9px;border-radius:50%;background:${s.c};display:inline-block;"></span>
+            ${statusLabel(s.k)} <b style="margin-inline-start:auto;">${counts[s.k]}</b></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card pad-md">
+      <p class="chart-title">${t('recent_activity')}</p>
+      <div class="activity-list">
+        ${auditSorted.map(a=>{
+          const who = userByName[a.user]||a.user;
+          const verb = a.action==='CREATE'?'created':a.action==='DELETE'?'deleted':'updated';
+          return `<div class="activity-item">
+            <span class="adot" style="background:${actionColor[a.action]||'var(--muted)'}"></span>
+            <div><div class="txt"><b>${escapeHtml(who)}</b> ${verb} <b>${escapeHtml(a.site_id)}</b>${a.field? ' · '+escapeHtml(a.field):''}</div>
+            <div class="time">${fmtDate(a.timestamp)}</div></div>
+          </div>`;
+        }).join('') || `<p style="color:var(--muted);font-size:12.5px;">—</p>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ================= SITE LIST ================= */
+function renderSiteList(){
+  let sites = filterSitesByPermissions(DATA.sites, CURRENT_USER);
+  if(UI.search){
+    const q = UI.search.toLowerCase();
+    sites = sites.filter(s=> [s.site_id, s.acq.address, s.acq.acquisition_manager, s.acq.owner, s.acq.negotiator]
+      .some(v=> (v||'').toLowerCase().includes(q)));
+  }
+  if(UI.statusFilter) sites = sites.filter(s=> deriveStatus(s)===UI.statusFilter);
+  if(UI.typologyFilter) sites = sites.filter(s=> s.acq.typology===UI.typologyFilter);
+
+  const typologies = ['Rooftop','Greenfield','Indoor','Street level'];
+
+  return `
+  ${renderTopbar(t('nav_sites'), null, CURRENT_USER.role!=='viewer' ? `<button class="btn btn-primary btn-sm" id="btn-add-site-top">+ ${t('btn_add_site')}</button>`:'')}
+  <div class="content">
+    <div class="filters-row">
+      <input type="text" id="search-input" placeholder="${t('search_placeholder')}" value="${escapeHtml(UI.search)}">
+      <select id="filter-status">
+        <option value="">${t('filter_status_all')}</option>
+        <option value="Complete" ${UI.statusFilter==='Complete'?'selected':''}>${t('status_complete')}</option>
+        <option value="In progress" ${UI.statusFilter==='In progress'?'selected':''}>${t('status_in_progress')}</option>
+        <option value="New" ${UI.statusFilter==='New'?'selected':''}>${t('status_new')}</option>
+      </select>
+      <select id="filter-typology">
+        <option value="">${t('filter_typology_all')}</option>
+        ${typologies.map(ty=>`<option value="${ty}" ${UI.typologyFilter===ty?'selected':''}>${escapeHtml(ty)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="results-count">${sites.length} ${t('sites_label')}</div>
+    <div class="card">
+      ${sites.length? `
+      <table>
+        <thead><tr>
+          <th>${t('col_site_id')}</th><th>${t('col_address')}</th><th>${t('col_manager')}</th>
+          <th>${t('col_typology')}</th><th>${t('col_status')}</th><th>${t('col_updated')}</th><th>${t('col_actions')}</th>
+        </tr></thead>
+        <tbody>
+        ${sites.map(s=>{
+          const st = deriveStatus(s);
+          return `<tr data-site="${s.site_id}">
+            <td><b>${escapeHtml(s.site_id)}</b></td>
+            <td>${escapeHtml(s.acq.address)||'—'}</td>
+            <td>${escapeHtml(s.acq.acquisition_manager)||'—'}</td>
+            <td>${escapeHtml(s.acq.typology)||'—'}</td>
+            <td><span class="badge ${statusKey(st)}">${statusLabel(st)}</span></td>
+            <td>${fmtDate(s.meta.updated_at)}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="btn btn-ghost btn-sm" data-view="${s.site_id}">${t('btn_view')}</button>
+              ${CURRENT_USER.role!=='viewer'?`<button class="btn btn-ghost btn-sm" data-edit="${s.site_id}">${t('btn_edit')}</button>`:''}
+            </td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>` : `<div class="empty-state"><div class="ic">🗂️</div>${t('empty_sites')}</div>`}
+    </div>
+  </div>`;
+}
+
+/* ================= SITE DETAIL ================= */
+function renderSiteDetail(){
+  const site = DATA.sites.find(s=>s.site_id===ROUTE_PARAM);
+  if(!site) return `<div class="content"><div class="empty-state">Not found</div></div>`;
+  const st = deriveStatus(site);
+  const canEdit = canEditSite(CURRENT_USER) && CURRENT_USER.role!=='viewer';
+
+  const sectionHtml = SECTIONS.map(sec=>`
+    <div class="card section-panel">
+      <div class="section-head"><span class="section-dot" style="background:${sec.color}"></span><h3>${t('section_'+sec.key)}</h3></div>
+      <div class="field-grid">
+        ${sec.fields.map(f=>{
+          const v = fieldValue(site, f);
+          if(f.type==='checkbox'){
+            return `<div class="field-disp"><div class="lbl">${t(f.label_key)}</div><div class="val">${v?`<span class="chip-yes">✓ Yes</span>`:`<span class="chip-no">– No</span>`}</div></div>`;
+          }
+          const dv = f.type==='date' ? (v?fmtDate(v):'') : v;
+          return `<div class="field-disp"><div class="lbl">${t(f.label_key)}</div><div class="val ${dv?'':'muted'}">${dv?escapeHtml(dv):t('no_value')}</div></div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  const folder = buildFolderPath(site.site_id, DATA.meta.server_base_path);
+  return `
+  ${renderTopbar('', null, '')}
+  <div class="content">
+    <div class="detail-head">
+      <button class="btn btn-ghost btn-sm" id="btn-back">← ${t('back')}</button>
+      <h2 style="margin:0;font-size:18px;">${escapeHtml(site.site_id)}</h2>
+      <span style="color:var(--muted);font-size:13px;">${escapeHtml(site.acq.address)||''}</span>
+      <span class="badge ${statusKey(st)}">${statusLabel(st)}</span>
+      ${canEdit?`<button class="btn btn-primary btn-sm" style="margin-inline-start:auto;" id="btn-edit-site">${t('btn_edit')}</button>`:''}
+    </div>
+    ${sectionHtml}
+    <div class="card section-panel">
+      <div class="section-head"><span class="section-dot" style="background:var(--text2)"></span><h3>${t('section_files')}</h3></div>
+      <div class="path-row">
+        <code>${escapeHtml(folder)}</code>
+        <button class="btn btn-ghost btn-sm" data-openfolder="${escapeHtml(folder)}">📁 ${t('btn_open_folder')}</button>
+        <button class="btn btn-ghost btn-sm" data-copypath="${escapeHtml(folder)}">⧉ ${t('btn_copy_path')}</button>
+      </div>
+      <div style="padding:0 18px;"><div class="warn-note">⚠️ ${t('network_warning')}</div></div>
+      ${site.files.length ? site.files.map(f=>`
+        <div class="file-row">
+          <span>${fileIcon(f.name)}</span>
+          <span class="fname">${escapeHtml(f.name)}</span>
+          <span class="ftag">${escapeHtml(f.section)}</span>
+          <a href="${toFileUrl(f.path)}" target="_blank" rel="noopener">${t('btn_open_folder')==='Open Folder'?'Open file':'فتح الملف'}</a>
+          <span class="fdate">${fmtDate(f.added_at)}</span>
+        </div>`).join('') : `<div class="empty-state" style="padding:24px;">${t('no_files')}</div>`}
+    </div>
+  </div>`;
+}
+
+/* ================= SITE FORM ================= */
+let FORM_DRAFT = null; // working copy for new/edit
+function blankSiteDraft(){
+  const mk = (fields)=> Object.fromEntries(fields.map(f=>[f.key, f.type==='checkbox'?false:'']));
+  return {
+    site_id:'', acq:mk(ACQ_FIELDS), sta:mk(STA_FIELDS), construction:mk(CONSTRUCTION_FIELDS), acceptance:mk(ACCEPTANCE_FIELDS),
+    files:[], meta:{created_at:new Date().toISOString(), created_by:CURRENT_USER.username, updated_at:new Date().toISOString(), updated_by:CURRENT_USER.username}
+  };
+}
+function renderSiteForm(){
+  const isNew = ROUTE_PARAM==='new';
+  if(!FORM_DRAFT){
+    if(isNew) FORM_DRAFT = blankSiteDraft();
+    else {
+      const existing = DATA.sites.find(s=>s.site_id===ROUTE_PARAM);
+      FORM_DRAFT = JSON.parse(JSON.stringify(existing));
+    }
+  }
+  const sectionHasData = (secKey)=>{
+    if(secKey==='files') return FORM_DRAFT.files.length>0;
+    const sec = FORM_DRAFT[secKey];
+    return Object.values(sec).some(v=> typeof v==='boolean'? v===true : !!v);
+  };
+  const tabs = [...SECTIONS.map(s=>s.key), 'files'];
+
+  let body = '';
+  if(UI.formTab==='files'){
+    const folder = buildFolderPath(FORM_DRAFT.site_id||'[SITE-ID]', DATA.meta.server_base_path);
+    body = `
+    <div class="card pad-md" style="margin-bottom:14px;">
+      <div class="path-row" style="padding:0;">
+        <code>${escapeHtml(folder)}</code>
+        <button class="btn btn-ghost btn-sm" data-copypath="${escapeHtml(folder)}">⧉ ${t('btn_copy_path')}</button>
+      </div>
+      <div class="warn-note" style="margin-top:10px;">⚠️ ${t('network_warning')}</div>
+    </div>
+    <div class="card pad-md">
+      ${FORM_DRAFT.files.map((f,i)=>`
+        <div class="file-row" style="border-top:${i===0?'none':'1px solid var(--border)'};padding-inline:0;">
+          <span>${fileIcon(f.name)}</span><span class="fname">${escapeHtml(f.name)}</span>
+          <span class="ftag">${escapeHtml(f.section)}</span>
+          <span class="fdate">${fmtDate(f.added_at)}</span>
+          <button class="btn btn-ghost btn-sm" data-delfile="${f.file_id}">🗑</button>
+        </div>`).join('') || `<p style="color:var(--muted);font-size:12.5px;">${t('no_files')}</p>`}
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:14px;">
+        <p style="font-weight:700;font-size:13px;margin:0 0 10px;">${t('add_file_link')}</p>
+        <div class="form-grid" style="grid-template-columns:1.2fr 1.6fr 0.8fr auto;align-items:end;">
+          <div class="field" style="margin:0;"><label>${t('file_name')}</label><input id="newfile-name" type="text"></div>
+          <div class="field" style="margin:0;"><label>${t('file_path')}</label><input id="newfile-path" type="text"></div>
+          <div class="field" style="margin:0;"><label>${t('file_section')}</label>
+            <select id="newfile-section"><option>ACQ</option><option>STA</option><option>Construction</option><option>Acceptance</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-add-file">${t('btn_add')}</button>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    const sec = SECTIONS.find(s=>s.key===UI.formTab);
+    body = `<div class="card pad-md"><div class="form-grid">
+      ${sec.fields.map(f=>{
+        const val = FORM_DRAFT[sec.key][f.key];
+        if(f.type==='checkbox'){
+          return `<div class="cb-field"><input type="checkbox" id="ff-${sec.key}-${f.key}" ${val?'checked':''} data-sec="${sec.key}" data-key="${f.key}" class="form-field-cb"><label for="ff-${sec.key}-${f.key}" style="font-size:13px;">${t(f.label_key)}</label></div>`;
+        }
+        if(f.type==='select'){
+          return `<div class="field" style="margin:0;"><label>${t(f.label_key)}</label>
+            <select data-sec="${sec.key}" data-key="${f.key}" class="form-field-input">
+              <option value="">—</option>
+              ${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}
+            </select></div>`;
+        }
+        if(f.type==='textarea'){
+          return `<div class="field" style="margin:0;grid-column:span 3;"><label>${t(f.label_key)}</label><textarea rows="2" data-sec="${sec.key}" data-key="${f.key}" class="form-field-input">${escapeHtml(val)}</textarea></div>`;
+        }
+        return `<div class="field" style="margin:0;"><label>${t(f.label_key)}</label><input type="${f.type==='date'?'date':'text'}" value="${escapeHtml(val)}" data-sec="${sec.key}" data-key="${f.key}" class="form-field-input"></div>`;
+      }).join('')}
+    </div></div>`;
+  }
+
+  return `
+  ${renderTopbar(isNew? t('btn_add_site') : ROUTE_PARAM, null, `
+     <button class="btn btn-ghost btn-sm" id="btn-cancel-form">${t('btn_cancel')}</button>
+     <button class="btn btn-primary btn-sm" id="btn-save-form">${t('btn_save')}</button>`)}
+  <div class="content">
+    <div class="card pad-md" style="margin-bottom:16px;max-width:340px;">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);">${t('field_site_id')} *</label>
+      <input type="text" id="ff-site-id" value="${escapeHtml(FORM_DRAFT.site_id)}" ${!isNew?'disabled':''}
+        style="margin-top:6px;width:100%;border:1px solid var(--border);border-radius:6px;padding:9px 10px;font-size:13.5px;${!isNew?'background:#f3f4f8;color:var(--muted);':''}">
+      ${UI.siteIdErr? `<div class="field"><div class="err">${UI.siteIdErr}</div></div>`:''}
+    </div>
+    <div class="tabs">
+      ${tabs.map(tb=>`<button class="tab ${UI.formTab===tb?'active':''}" data-tab="${tb}">
+        ${t('section_'+tb)} ${sectionHasData(tb)?`<span class="tabdot"></span>`:''}
+      </button>`).join('')}
+    </div>
+    ${body}
+  </div>`;
+}
+
+/* ================= EXPORT PAGE ================= */
+function renderExport(){
+  let sites = filterSitesByPermissions(DATA.sites, CURRENT_USER);
+  if(UI.exStatus) sites = sites.filter(s=>deriveStatus(s)===UI.exStatus);
+  if(UI.exTypology) sites = sites.filter(s=>s.acq.typology===UI.exTypology);
+  const typologies = ['Rooftop','Greenfield','Indoor','Street level'];
+
+  return `
+  ${renderTopbar(t('nav_export'), null, '')}
+  <div class="content">
+    <div class="card pad-md">
+      <p class="chart-title">${t('export_filters')}</p>
+      <div class="filters-row" style="margin-bottom:0;">
+        <select id="ex-status"><option value="">${t('filter_status_all')}</option>
+          <option ${UI.exStatus==='Complete'?'selected':''}>Complete</option>
+          <option ${UI.exStatus==='In progress'?'selected':''}>In progress</option>
+          <option ${UI.exStatus==='New'?'selected':''}>New</option></select>
+        <select id="ex-typology"><option value="">${t('filter_typology_all')}</option>
+          ${typologies.map(ty=>`<option ${UI.exTypology===ty?'selected':''}>${ty}</option>`).join('')}</select>
+      </div>
+    </div>
+    <p class="results-count" style="margin-top:14px;">${sites.length} ${t('export_match')}</p>
+    <div class="export-grid">
+      <div class="card export-card" id="export-excel"><div class="eicon">📊</div><h4>${t('export_excel')}</h4><p>${t('export_excel_d')}</p>
+        <button class="btn btn-primary btn-sm">${t('btn_export_json').includes('JSON')?'Download':'تحميل'}</button></div>
+      <div class="card export-card" id="export-csv"><div class="eicon">🧾</div><h4>${t('export_csv')}</h4><p>${t('export_csv_d')}</p>
+        <button class="btn btn-primary btn-sm">${LANG==='ar'?'تحميل':'Download'}</button></div>
+      <div class="card export-card" id="export-pdf"><div class="eicon">🗎</div><h4>${t('export_pdf')}</h4><p>${t('export_pdf_d')}</p>
+        <button class="btn btn-primary btn-sm">${LANG==='ar'?'تحميل':'Download'}</button></div>
+    </div>
+  </div>`;
+}
+
+/* ================= ADMIN PAGE ================= */
+function renderAdmin(){
+  const tabsHtml = ['users','permissions','audit'].map(tb=>
+    `<button class="${UI.adminTab===tb?'active':''}" data-admintab="${tb}">${t('tab_'+tb)}</button>`).join('');
+
+  let body = '';
+  if(UI.adminTab==='users'){
+    body = `
+    <div class="card">
+      <table><thead><tr>
+        <th>${t('col_username')}</th><th>${t('col_display_name')}</th><th>${t('col_role')}</th><th>${t('col_status_active')}</th><th></th>
+      </tr></thead><tbody>
+      ${DATA.users.filter(u=>u.user_id!=='bootstrap-admin').map(u=>`
+        <tr>
+          <td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.display_name)}</td>
+          <td><span class="rolebadge">${t('role_'+u.role)}</span></td>
+          <td><span class="toggle-pill ${u.active?'on':''}" data-toggleactive="${u.user_id}"><span class="knob"></span></span></td>
+          <td><button class="btn btn-ghost btn-sm" data-deluser="${u.user_id}">🗑</button></td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:14px;" id="btn-add-user">+ ${t('btn_add_user')}</button>
+    <div class="card pad-md" style="margin-top:24px;max-width:420px;">
+      <p class="chart-title">${t('settings_title')}</p>
+      <div class="field"><label>${t('settings_base_path')}</label>
+        <input type="text" id="settings-basepath" value="${escapeHtml(DATA.meta.server_base_path)}"></div>
+      <p style="font-size:11px;color:var(--muted);">${t('settings_base_path_note')}</p>
+      <button class="btn btn-ghost btn-sm" id="btn-save-settings">${t('btn_save')}</button>
+    </div>`;
+  } else if(UI.adminTab==='permissions'){
+    body = `<div class="card">
+      <table><thead><tr><th>${t('col_username')}</th><th>${t('export_filters')}</th><th>${t('col_status_active')}</th></tr></thead>
+      <tbody>
+      ${DATA.users.filter(u=>u.user_id!=='bootstrap-admin' && u.role!=='admin').map(u=>`
+        <tr><td>${escapeHtml(u.display_name)}</td>
+        <td style="font-size:12px;color:var(--text2);">
+          site_access: <b>${u.site_access}</b>${u.site_access==='assigned'?` · sites: ${escapeHtml((u.allowed_sites||[]).join(', ')||'—')}`:''}${u.site_access==='region'?` · regions: ${escapeHtml((u.allowed_regions||[]).join(', ')||'—')}`:''}
+        </td>
+        <td>can_export: ${u.can_export?'✓':'–'} ${u.role==='data_entry'?` · can_upload_files: ${u.can_upload_files?'✓':'–'}`:''}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  } else {
+    const sorted = [...DATA.audit_log].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    body = `<div class="card"><table><thead><tr>
+      <th>Timestamp</th><th>${t('col_username')}</th><th>Action</th><th>${t('col_site_id')}</th><th>Field</th><th>Old</th><th>New</th>
+      </tr></thead><tbody>
+      ${sorted.map(a=>`<tr><td>${fmtDate(a.timestamp)}</td><td>${escapeHtml(a.user)}</td><td>${a.action}</td>
+        <td>${escapeHtml(a.site_id)}</td><td>${escapeHtml(a.field)||'—'}</td><td>${escapeHtml(a.old_value)||'—'}</td><td>${escapeHtml(a.new_value)||'—'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  return `
+  ${renderTopbar(t('nav_admin'), null, '')}
+  <div class="content">
+    <div class="admin-tabs">${tabsHtml}</div>
+    ${body}
+  </div>
+  ${UI.showAddUser ? renderAddUserModal() : ''}`;
+}
+function renderAddUserModal(){
+  return `<div class="overlay" id="modal-overlay">
+    <div class="modal">
+      <h3>${t('btn_add_user')}</h3>
+      <div class="field"><label>${t('username')}</label><input id="nu-username" type="text"></div>
+      <div class="field"><label>${t('password')}</label><input id="nu-password" type="text"></div>
+      <div class="field"><label>${t('col_display_name')}</label><input id="nu-display" type="text"></div>
+      <div class="field"><label>${t('col_role')}</label>
+        <select id="nu-role"><option value="data_entry">${t('role_data_entry')}</option><option value="viewer">${t('role_viewer')}</option><option value="admin">${t('role_admin')}</option></select></div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" id="modal-cancel">${t('btn_cancel')}</button>
+        <button class="btn btn-primary btn-sm" id="modal-save">${t('btn_save')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ================= MAIN RENDER ================= */
+function render(){
+  document.documentElement.dir = LANG==='ar'?'rtl':'ltr';
+  document.documentElement.lang = LANG;
+  const app = document.getElementById('app');
+
+  if(!CURRENT_USER){
+    app.innerHTML = renderLogin();
+    bindLogin();
+    return;
+  }
+
+  let page='';
+  if(ROUTE==='dashboard') page = renderDashboard();
+  else if(ROUTE==='sites') page = renderSiteList();
+  else if(ROUTE==='site-detail') page = renderSiteDetail();
+  else if(ROUTE==='site-form') page = renderSiteForm();
+  else if(ROUTE==='export') page = renderExport();
+  else if(ROUTE==='admin') page = renderAdmin();
+  else page = renderDashboard();
+
+  app.innerHTML = `<div class="sidebar-wrap" style="display:flex;width:100%;">${renderSidebar()}<div class="main">${page}</div></div>`;
+  if(TOAST) app.insertAdjacentHTML('beforeend', `<div class="toast ${TOAST.type==='error'?'error':''}">${TOAST.msg}</div>`);
+  bindAppEvents();
+}
+
+/* ================= EVENT BINDING ================= */
+function bindLogin(){
+  document.querySelectorAll('[data-lang]').forEach(b=> b.onclick = ()=> setLanguage(b.dataset.lang));
+  const trigger = document.getElementById('btn-upload-trigger');
+  if(trigger) trigger.onclick = ()=> document.getElementById('json-upload').click();
+  const up = document.getElementById('json-upload');
+  if(up) up.onchange = (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const parsed = JSON.parse(reader.result);
+        DATA = parsed; IS_DIRTY = false;
+        UI.uploadMsg = {ok:true, text:t('upload_ok')};
+      }catch(err){
+        UI.uploadMsg = {ok:false, text:t('upload_bad')};
+      }
+      render();
+    };
+    reader.readAsText(file);
+  };
+  const btn = document.getElementById('btn-login');
+  if(btn) btn.onclick = ()=>{
+    const u = document.getElementById('login-username').value.trim();
+    const p = document.getElementById('login-password').value;
+    const res = login(u,p);
+    if(res.ok){ UI.loginErr=''; go('dashboard'); }
+    else { UI.loginErr = res.error; render(); }
+  };
+}
+
+function bindAppEvents(){
+  document.querySelectorAll('[data-lang]').forEach(b=> b.onclick = ()=> setLanguage(b.dataset.lang));
+  document.querySelectorAll('[data-route]').forEach(a=> a.onclick = (e)=>{
+    e.preventDefault();
+    const r = a.dataset.route;
+    if(r==='site-form-new'){ FORM_DRAFT=null; UI.formTab='acq'; UI.siteIdErr=''; go('site-form','new'); }
+    else go(r);
+  });
+  const so = document.getElementById('btn-signout'); if(so) so.onclick = logout;
+  const expBtn = document.getElementById('btn-export-json');
+  if(expBtn) expBtn.onclick = ()=>{
+    const exportObj = {...DATA, meta:{...DATA.meta, exported_at:new Date().toISOString(), exported_by:CURRENT_USER.username}};
+    const blob = new Blob([JSON.stringify(exportObj,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `lmp-data-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    IS_DIRTY = false;
+    showToast(LANG==='ar'?'تم تصدير الملف':'JSON exported');
+  };
+
+  const addTop = document.getElementById('btn-add-site-top');
+  if(addTop) addTop.onclick = ()=>{ FORM_DRAFT=null; UI.formTab='acq'; UI.siteIdErr=''; go('site-form','new'); };
+
+  /* Dashboard / list specific */
+  if(ROUTE==='sites'){
+    const s = document.getElementById('search-input'); if(s){
+      s.oninput = ()=>{ UI.search = s.value; render(); document.getElementById('search-input').focus(); document.getElementById('search-input').selectionStart = document.getElementById('search-input').value.length; };
+    }
+    const fs = document.getElementById('filter-status'); if(fs) fs.onchange = ()=>{ UI.statusFilter = fs.value; render(); };
+    const ft = document.getElementById('filter-typology'); if(ft) ft.onchange = ()=>{ UI.typologyFilter = ft.value; render(); };
+    document.querySelectorAll('tbody tr').forEach(tr=> tr.onclick = ()=> go('site-detail', tr.dataset.site));
+    document.querySelectorAll('[data-view]').forEach(b=> b.onclick = (e)=>{ e.stopPropagation(); go('site-detail', b.dataset.view); });
+    document.querySelectorAll('[data-edit]').forEach(b=> b.onclick = (e)=>{ e.stopPropagation(); FORM_DRAFT=null; UI.formTab='acq'; UI.siteIdErr=''; go('site-form', b.dataset.edit); });
+  }
+
+  if(ROUTE==='site-detail'){
+    const back = document.getElementById('btn-back'); if(back) back.onclick = ()=> go('sites');
+    const editBtn = document.getElementById('btn-edit-site'); if(editBtn) editBtn.onclick = ()=>{ FORM_DRAFT=null; UI.formTab='acq'; UI.siteIdErr=''; go('site-form', ROUTE_PARAM); };
+    document.querySelectorAll('[data-openfolder]').forEach(b=> b.onclick = ()=> window.open(toFileUrl(b.dataset.openfolder),'_blank'));
+    document.querySelectorAll('[data-copypath]').forEach(b=> b.onclick = ()=>{
+      navigator.clipboard?.writeText(b.dataset.copypath).catch(()=>{});
+      showToast(LANG==='ar'?'تم نسخ المسار':'Path copied');
+    });
+  }
+
+  if(ROUTE==='site-form'){
+    document.querySelectorAll('.form-field-input').forEach(inp=> inp.onchange = ()=>{
+      FORM_DRAFT[inp.dataset.sec][inp.dataset.key] = inp.value; markDirty();
+    });
+    document.querySelectorAll('.form-field-cb').forEach(cb=> cb.onchange = ()=>{
+      FORM_DRAFT[cb.dataset.sec][cb.dataset.key] = cb.checked; markDirty(); render();
+    });
+    document.querySelectorAll('[data-tab]').forEach(b=> b.onclick = ()=>{
+      // preserve typed values before switching tab
+      syncFormInputs();
+      UI.formTab = b.dataset.tab; render();
+    });
+    const siteIdInput = document.getElementById('ff-site-id');
+    if(siteIdInput) siteIdInput.oninput = ()=>{ FORM_DRAFT.site_id = siteIdInput.value; };
+
+    document.querySelectorAll('[data-copypath]').forEach(b=> b.onclick = ()=>{
+      navigator.clipboard?.writeText(b.dataset.copypath).catch(()=>{});
+      showToast(LANG==='ar'?'تم نسخ المسار':'Path copied');
+    });
+    const addFileBtn = document.getElementById('btn-add-file');
+    if(addFileBtn) addFileBtn.onclick = ()=>{
+      const name = document.getElementById('newfile-name').value.trim();
+      const path = document.getElementById('newfile-path').value.trim();
+      const section = document.getElementById('newfile-section').value;
+      if(!name) return;
+      FORM_DRAFT.files.push({file_id:'f'+Date.now(), name, path: path || (buildFolderPath(FORM_DRAFT.site_id||'NEW', DATA.meta.server_base_path)+name), section, added_by:CURRENT_USER.username, added_at:new Date().toISOString().slice(0,10)});
+      markDirty(); render();
+    };
+    document.querySelectorAll('[data-delfile]').forEach(b=> b.onclick = ()=>{
+      FORM_DRAFT.files = FORM_DRAFT.files.filter(f=>f.file_id!==b.dataset.delfile); markDirty(); render();
+    });
+
+    const cancelBtn = document.getElementById('btn-cancel-form');
+    if(cancelBtn) cancelBtn.onclick = ()=>{ FORM_DRAFT=null; go(ROUTE_PARAM==='new'?'sites':'site-detail', ROUTE_PARAM==='new'?null:ROUTE_PARAM); };
+
+    const saveBtn = document.getElementById('btn-save-form');
+    if(saveBtn) saveBtn.onclick = ()=>{
+      syncFormInputs();
+      if(!FORM_DRAFT.site_id){ UI.siteIdErr = t('field_required'); render(); return; }
+      const isNew = ROUTE_PARAM==='new';
+      if(isNew && DATA.sites.some(s=>s.site_id===FORM_DRAFT.site_id)){ UI.siteIdErr = t('field_duplicate'); render(); return; }
+      FORM_DRAFT.meta.updated_at = new Date().toISOString();
+      FORM_DRAFT.meta.updated_by = CURRENT_USER.username;
+      if(isNew){
+        DATA.sites.push(FORM_DRAFT);
+        DATA.audit_log.push({timestamp:new Date().toISOString(), user:CURRENT_USER.username, action:'CREATE', site_id:FORM_DRAFT.site_id, field:'', old_value:'', new_value:''});
+      } else {
+        const idx = DATA.sites.findIndex(s=>s.site_id===FORM_DRAFT.site_id);
+        DATA.sites[idx] = FORM_DRAFT;
+        DATA.audit_log.push({timestamp:new Date().toISOString(), user:CURRENT_USER.username, action:'UPDATE', site_id:FORM_DRAFT.site_id, field:'(multiple)', old_value:'', new_value:''});
+      }
+      markDirty();
+      const savedId = FORM_DRAFT.site_id;
+      FORM_DRAFT = null;
+      showToast(LANG==='ar'?'تم الحفظ':'Saved');
+      go('site-detail', savedId);
+    };
+  }
+
+  if(ROUTE==='export'){
+    const es = document.getElementById('ex-status'); if(es) es.onchange = ()=>{ UI.exStatus = es.value; render(); };
+    const et = document.getElementById('ex-typology'); if(et) et.onchange = ()=>{ UI.exTypology = et.value; render(); };
+    ['export-excel','export-csv','export-pdf'].forEach(id=>{
+      const node = document.getElementById(id);
+      if(node) node.onclick = ()=> showToast(LANG==='ar'?'بدأ التحميل (محاكاة)':'Download started (simulated)');
+    });
+  }
+
+  if(ROUTE==='admin'){
+    document.querySelectorAll('[data-admintab]').forEach(b=> b.onclick = ()=>{ UI.adminTab = b.dataset.admintab; render(); });
+    document.querySelectorAll('[data-toggleactive]').forEach(b=> b.onclick = ()=>{
+      const u = DATA.users.find(x=>x.user_id===b.dataset.toggleactive); u.active = !u.active; markDirty(); render();
+    });
+    document.querySelectorAll('[data-deluser]').forEach(b=> b.onclick = ()=>{
+      const admins = DATA.users.filter(u=>u.role==='admin');
+      const target = DATA.users.find(u=>u.user_id===b.dataset.deluser);
+      if(target.role==='admin' && admins.length<=1){ showToast(LANG==='ar'?'لا يمكن حذف آخر مدير':"Can't delete the last admin", 'error'); return; }
+      DATA.users = DATA.users.filter(u=>u.user_id!==b.dataset.deluser); markDirty(); render();
+    });
+    const addUserBtn = document.getElementById('btn-add-user');
+    if(addUserBtn) addUserBtn.onclick = ()=>{ UI.showAddUser = true; render(); };
+    const overlay = document.getElementById('modal-overlay');
+    if(overlay){
+      const cancel = document.getElementById('modal-cancel'); if(cancel) cancel.onclick = ()=>{ UI.showAddUser=false; render(); };
+      const save = document.getElementById('modal-save');
+      if(save) save.onclick = ()=>{
+        const username = document.getElementById('nu-username').value.trim();
+        const password = document.getElementById('nu-password').value.trim();
+        const display_name = document.getElementById('nu-display').value.trim();
+        const role = document.getElementById('nu-role').value;
+        if(!username || !password || !display_name) return;
+        DATA.users.push({user_id:'u'+Date.now(), username, password, role, display_name, active:true,
+          site_access:'all', allowed_regions:[], allowed_sites:[], can_export:role!=='viewer', can_upload_files:role==='data_entry',
+          created_at:new Date().toISOString().slice(0,10), created_by:CURRENT_USER.username});
+        markDirty(); UI.showAddUser=false; render();
+      };
+    }
+    const saveSettings = document.getElementById('btn-save-settings');
+    if(saveSettings) saveSettings.onclick = ()=>{
+      DATA.meta.server_base_path = document.getElementById('settings-basepath').value;
+      markDirty(); showToast(LANG==='ar'?'تم الحفظ':'Saved');
+    };
+  }
+}
+
+function syncFormInputs(){
+  document.querySelectorAll('.form-field-input').forEach(inp=>{
+    if(FORM_DRAFT[inp.dataset.sec]) FORM_DRAFT[inp.dataset.sec][inp.dataset.key] = inp.value;
+  });
+  const siteIdInput = document.getElementById('ff-site-id');
+  if(siteIdInput) FORM_DRAFT.site_id = siteIdInput.value;
+}
+
+/* ================= INIT ================= */
+document.documentElement.dir = LANG==='ar'?'rtl':'ltr';
+document.documentElement.lang = LANG;
+render();
+</script>
+</body>
+</html>
