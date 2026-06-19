@@ -353,13 +353,7 @@ tbody tr:hover {
 .export-card {
   padding: 22px;
   text-align: center;
-  transition: 0.15s;
   cursor: pointer;
-}
-.export-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 18%, transparent);
-  transform: translateY(-2px);
 }
 .export-card .eicon {
   font-size: 30px;
