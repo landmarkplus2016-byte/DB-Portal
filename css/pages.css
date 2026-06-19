@@ -358,7 +358,7 @@ tbody tr:hover {
 }
 .export-card:hover {
   border-color: var(--primary);
-  box-shadow: 0 6px 18px rgba(61, 90, 241, 0.1);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 18%, transparent);
   transform: translateY(-2px);
 }
 .export-card .eicon {

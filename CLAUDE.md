@@ -40,7 +40,7 @@ GitHub Pages serves the repo directly — no build/deploy script, no `gh-pages` 
 
 1. **No backend calls at runtime** — zero `fetch()` calls to any server. The app is 100% offline after load (except loading the CDN script tags for SheetJS/jsPDF, which only happens once on page load)
 2. **No npm, no build step, ever** — if a feature seems to require installing a package, find a CDN `<script>` tag alternative or write it in plain JS instead
-3. **No localStorage for site data** — all site data, users, and audit log live in JS variables (in-memory state) only. localStorage is only used for language preference (`lmp_lang`)
+3. **No localStorage for site data** — all site data, users, and audit log live in JS variables (in-memory state) only. localStorage is only used for UI display preferences: language (`lmp_lang`) and accent theme (`lmp_theme`)
 4. **HashRouter pattern only** — routes are `#/...` fragments handled by reading `location.hash`. GitHub Pages does not support server-side routing, and hash routing needs zero configuration
 5. **Never delete audit log entries** — audit log is append-only, always
 6. **Permissions filter always applied** — `filterSitesByPermissions(sites, user)` must run before any site list or detail renders
@@ -49,7 +49,7 @@ GitHub Pages serves the repo directly — no build/deploy script, no `gh-pages` 
 9. **All UI text through `t('key')`** — never hardcode English or Arabic strings in JS template strings
 10. **Network path warning always shown** — never show a file link or folder button without the server network warning notice
 11. **One file, one job** — never add logic to a file that belongs in another file (see File Map)
-12. **Visual design comes from `design/lmp_prototype.html`** — see the Visual Reference section below
+12. **Visual design comes from `design/lmp_prototype.html`, as refined by the Design System section below** — the sidebar (navy) and accent color (switchable via the theme palette) have since diverged from the prototype's literal colors; the Design System section is the current source of truth where the two disagree
 
 ---
 
@@ -338,7 +338,8 @@ lmp-acq-db/
 │   │   ├── filePaths.js             # buildFolderPath(), buildFilePath(), toFileUrl()
 │   │   ├── exportHelpers.js         # flattenSiteForExcel(), exportToExcel(), exportToCSV(), exportToPDF()
 │   │                                 #   — uses the global `XLSX` and `jspdf` objects loaded via CDN <script> tags
-│   │   └── format.js                # fmtDate(), escapeHtml(), initials()
+│   │   ├── format.js                # fmtDate(), escapeHtml(), initials()
+│   │   └── theme.js                 # THEMES, getTheme(), setTheme(theme) — reads/writes localStorage 'lmp_theme'
 │   │
 │   └── constants/
 │       └── fields.js                # ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, ALL_FIELDS
@@ -377,7 +378,7 @@ When building each page or component, open the matching section of `design/lmp_p
 
 ## Design System
 
-**Theme:** Light — white cards on soft gray background
+**Theme:** Light content area (white cards on soft gray background) + a **fixed navy sidebar**, with a **switchable accent color** that the user picks from a 4-swatch palette changer in the sidebar (bottom, above the language toggle). This supersedes the original all-light prototype look — see "Theme Switcher" below before assuming the prototype's literal colors are still current.
 
 | Token | Value |
 |---|---|
@@ -387,8 +388,6 @@ When building each page or component, open the matching section of `design/lmp_p
 | Text primary | `#1a1d2e` |
 | Text secondary | `#4a4f6a` |
 | Text muted | `#9095b0` |
-| Primary (blue) | `#3d5af1` |
-| Primary dark | `#2d47d4` |
 | Success | `#16a34a` |
 | Warning | `#d97706` |
 | Danger | `#e05252` |
@@ -404,12 +403,19 @@ When building each page or component, open the matching section of `design/lmp_p
 | New | `#ede9fe` | `#6d28d9` |
 
 **Typography:** `'Segoe UI', system-ui, -apple-system, sans-serif`
-**Border radius:** `10px` cards, `6px` inputs and buttons
-**Bilingual:** English (LTR) + Arabic (RTL). `document.documentElement.dir` toggled on language change.
+**Border radius:** `14px` cards, `8px` inputs and buttons
+**Shadows:** `--shadow-sm` on `.card`, `--shadow-md` for hover-elevated elements (e.g. `.export-card:hover`)
+**Bilingual:** English (LTR) + Arabic (RTL). `document.documentElement.dir` toggled on language change. Flex containers use plain `flex-direction: row` — **never** `row-reverse` for RTL, since `row` is already direction-aware and flips automatically once `dir="rtl"` is set; adding `row-reverse` double-flips and breaks the layout.
 
-### `css/tokens.css` — paste this directly (Step 1.1)
+### Theme switcher — accent color, independent of the sidebar
 
-These are the exact values used in `design/lmp_prototype.html`. Do not substitute different values.
+- `js/utils/theme.js` exports `THEMES = ['blue','teal','purple','crimson']`, `getTheme()`, `setTheme(theme)` — same pattern as `i18n.js` (module-level state + registered render callback to avoid circular imports)
+- `setTheme(theme)` sets `document.documentElement.dataset.theme`, persists to `localStorage('lmp_theme')`, re-renders
+- `css/tokens.css` defines `[data-theme="blue|teal|purple|crimson"]` blocks that override `--primary`, `--primary-dark`, `--primary-soft` — this is the **only** thing that changes between themes
+- **The navy sidebar never changes with the theme** — only buttons, links, the active nav-item border, badges, and chart accents follow the selected theme color
+- Swatch reference colors (`--theme-color-*`) are separate, fixed tokens in `tokens.css` so the swatch row can render all 4 options regardless of which one is currently active
+
+### `css/tokens.css` — current values
 
 ```css
 :root {
@@ -421,6 +427,7 @@ These are the exact values used in `design/lmp_prototype.html`. Do not substitut
   --muted: #9095b0;
   --primary: #3d5af1;
   --primary-dark: #2d47d4;
+  --primary-soft: #3d5af11f;
   --success: #16a34a;
   --warning: #d97706;
   --danger: #e05252;
@@ -432,30 +439,50 @@ These are the exact values used in `design/lmp_prototype.html`. Do not substitut
   --st-prog-tx: #b45309;
   --st-new-bg: #ede9fe;
   --st-new-tx: #6d28d9;
-  --radius-card: 10px;
-  --radius-control: 6px;
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 64, 0.05);
+  --shadow-md: 0 4px 14px rgba(16, 24, 64, 0.08);
   --font-base: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --navy: #0f1942;
+  --navy-soft: #16215a;
+  --navy-border: #232c63;
+  --navy-text: #aab2d8;
+  --navy-text-strong: #ffffff;
+  --navy-muted: #6b74a8;
+
+  --theme-color-blue: #3d5af1;
+  --theme-color-teal: #0d9488;
+  --theme-color-purple: #7c3aed;
+  --theme-color-crimson: #be123c;
 }
+
+[data-theme="blue"]    { --primary: #3d5af1; --primary-dark: #2d47d4; --primary-soft: #3d5af11f; }
+[data-theme="teal"]    { --primary: #0d9488; --primary-dark: #0b7a70; --primary-soft: #0d94881f; }
+[data-theme="purple"]  { --primary: #7c3aed; --primary-dark: #6425c9; --primary-soft: #7c3aed1f; }
+[data-theme="crimson"] { --primary: #be123c; --primary-dark: #9f0f32; --primary-soft: #be123c1f; }
 ```
 
-Use these variables everywhere in `css/*.css` — never hardcode a hex color in a component file.
+Use these variables everywhere in `css/*.css` — never hardcode a hex color in a component file. If you need a tinted version of `var(--primary)` for a shadow/glow (not a flat fill), use `color-mix(in srgb, var(--primary) X%, transparent)` rather than a literal `rgba(...)`, so it stays theme-aware.
 
-### Component reference cheatsheet (from the prototype's CSS)
+### Component reference cheatsheet (current)
 
 | Component | Key styling |
 |---|---|
 | `.btn-primary` | bg `var(--primary)`, white text, `var(--radius-control)` radius, `9px 15px` padding, hover → `var(--primary-dark)` |
 | `.btn-ghost` | transparent bg, `1px solid var(--border)`, `var(--text2)` color |
 | `.btn-danger` | bg `#fbeaea`, text `var(--danger)` |
-| `.card` | white bg, `1px solid var(--border)`, `var(--radius-card)` radius |
+| `.card` | white bg, `1px solid var(--border)`, `var(--radius-card)` radius, `var(--shadow-sm)` |
 | `.badge` | pill shape, `3px 10px` padding, `11.5px` bold text, status colors from table above |
-| Sidebar | `230px` fixed width, white bg, border-inline-end, active nav item gets `3px` inline-start border in `var(--primary)` + `#eef1ff` bg |
+| Sidebar | `230px` fixed width, **navy** bg (`var(--navy)`), border-inline-end `var(--navy-border)`, active nav item gets `3px` inline-start border in `var(--primary)` + `rgba(255,255,255,.08)` bg, text `var(--navy-text)` / active `var(--navy-text-strong)` |
+| Theme swatches | row of 4 `20px` circles (`.swatch.blue/.teal/.purple/.crimson`), active one gets a white ring + navy halo |
 | Topbar | white bg, bottom border, `16px 26px` padding, flex space-between |
-| Inputs | `1px solid var(--border)`, `6px` radius, `9px 10px` padding, focus ring `0 0 0 3px #3d5af11f` with `var(--primary)` border |
+| Inputs | `1px solid var(--border)`, `8px` radius, `9px 10px` padding, focus ring `0 0 0 3px var(--primary-soft)` with `var(--primary)` border |
 | Modal | centered, `max-width: 560px`, `12px` radius, dark overlay `rgba(20,22,40,.45)` |
 | Toast | fixed bottom-end, dark bg, `9px` radius, auto-dismiss 2s |
 
-Use CSS logical properties everywhere for RTL support (`margin-inline-start`, `padding-inline-end`, `inset-inline-start`, `border-inline-end`, `text-align: start`) — never `margin-left`, `padding-right`, etc. The prototype already does this; carry it forward.
+Use CSS logical properties everywhere for RTL support (`margin-inline-start`, `padding-inline-end`, `inset-inline-start`, `border-inline-end`, `text-align: start`) — never `margin-left`, `padding-right`, etc.
 
 ---
 

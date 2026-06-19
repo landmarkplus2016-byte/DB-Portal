@@ -3,6 +3,7 @@ import { t, getLanguage, setLanguage } from '../i18n/i18n.js';
 import { go } from '../router.js';
 import { logout } from '../data/auth.js';
 import { initials, escapeHtml } from '../utils/format.js';
+import { THEMES, getTheme, setTheme } from '../utils/theme.js';
 
 function navItemHtml({ route, param, label, icon, isActive }) {
   return `<a href="#" class="${isActive ? 'active' : ''}" data-route="${route}" data-param="${param ?? ''}"><span class="ic">${icon}</span>${label}</a>`;
@@ -46,6 +47,9 @@ export function renderSidebar() {
       </div>
       <div class="nav">${navHtml}</div>
       <div class="sidebar-bottom">
+        <div class="theme-swatches">
+          ${THEMES.map((th) => `<button class="swatch ${th} ${getTheme() === th ? 'active' : ''}" data-theme-swatch="${th}" aria-label="${t('theme_' + th)}" type="button"></button>`).join('')}
+        </div>
         <div class="langtoggle">
           <button data-lang="en" class="${lang === 'en' ? 'active' : ''}">EN</button>
           <button data-lang="ar" class="${lang === 'ar' ? 'active' : ''}">ع</button>
@@ -66,6 +70,10 @@ export function renderSidebar() {
 export function bindSidebarEvents() {
   document.querySelectorAll('[data-lang]').forEach((btn) => {
     btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+  });
+
+  document.querySelectorAll('[data-theme-swatch]').forEach((btn) => {
+    btn.addEventListener('click', () => setTheme(btn.dataset.themeSwatch));
   });
 
   document.querySelectorAll('.nav a[data-route]').forEach((link) => {

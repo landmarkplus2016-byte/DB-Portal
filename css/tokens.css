@@ -7,6 +7,7 @@
   --muted: #9095b0;
   --primary: #3d5af1;
   --primary-dark: #2d47d4;
+  --primary-soft: #3d5af11f;
   --success: #16a34a;
   --warning: #d97706;
   --danger: #e05252;
@@ -18,7 +19,45 @@
   --st-prog-tx: #b45309;
   --st-new-bg: #ede9fe;
   --st-new-tx: #6d28d9;
-  --radius-card: 10px;
-  --radius-control: 6px;
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 64, 0.05);
+  --shadow-md: 0 4px 14px rgba(16, 24, 64, 0.08);
   --font-base: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Navy sidebar — fixed regardless of accent theme */
+  --navy: #0f1942;
+  --navy-soft: #16215a;
+  --navy-border: #232c63;
+  --navy-text: #aab2d8;
+  --navy-text-strong: #ffffff;
+  --navy-muted: #6b74a8;
+
+  /* Fixed reference colors for the theme-switcher swatches (independent of the active [data-theme]) */
+  --theme-color-blue: #3d5af1;
+  --theme-color-teal: #0d9488;
+  --theme-color-purple: #7c3aed;
+  --theme-color-crimson: #be123c;
+}
+
+/* Accent theme presets — swapped via [data-theme] on <html>, persisted as lmp_theme */
+[data-theme="blue"] {
+  --primary: #3d5af1;
+  --primary-dark: #2d47d4;
+  --primary-soft: #3d5af11f;
+}
+[data-theme="teal"] {
+  --primary: #0d9488;
+  --primary-dark: #0b7a70;
+  --primary-soft: #0d94881f;
+}
+[data-theme="purple"] {
+  --primary: #7c3aed;
+  --primary-dark: #6425c9;
+  --primary-soft: #7c3aed1f;
+}
+[data-theme="crimson"] {
+  --primary: #be123c;
+  --primary-dark: #9f0f32;
+  --primary-soft: #be123c1f;
 }

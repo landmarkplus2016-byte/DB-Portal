@@ -8,6 +8,10 @@ export const en = {
   nav_export: "Export",
   nav_admin: "Admin",
   sign_out: "Sign out",
+  theme_blue: "Blue theme",
+  theme_teal: "Teal theme",
+  theme_purple: "Purple theme",
+  theme_crimson: "Crimson theme",
 
   // Login / auth
   upload_json_prompt: "No data loaded yet. Upload the master JSON file from the shared drive to begin.",

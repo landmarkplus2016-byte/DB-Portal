@@ -8,6 +8,10 @@ export const ar = {
   nav_export: "تصدير",
   nav_admin: "الإدارة",
   sign_out: "تسجيل الخروج",
+  theme_blue: "السمة الزرقاء",
+  theme_teal: "السمة الفيروزية",
+  theme_purple: "السمة البنفسجية",
+  theme_crimson: "السمة الحمراء",
 
   // Login / auth
   upload_json_prompt: "لا توجد بيانات محمّلة بعد. ارفع ملف JSON الرئيسي من المحرك المشترك للبدء.",
