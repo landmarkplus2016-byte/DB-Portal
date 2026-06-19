@@ -5,8 +5,18 @@
 body {
   margin: 0;
   font-family: var(--font-base);
-  background: var(--bg);
   color: var(--text);
+  background-color: var(--bg);
+  /* Background art at ~10% visibility (90% transparent) — overlay tints it down to a faint texture */
+  background-image: linear-gradient(
+      color-mix(in srgb, var(--bg) 90%, transparent),
+      color-mix(in srgb, var(--bg) 90%, transparent)
+    ),
+    url('../back-ground.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 [dir="rtl"] body {

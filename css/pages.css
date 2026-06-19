@@ -5,7 +5,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 20% 20%, #eef1ff 0%, var(--bg) 45%);
+  background-image: radial-gradient(
+      circle at 20% 20%,
+      color-mix(in srgb, #eef1ff 90%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 90%, transparent) 45%
+    ),
+    url('../back-ground.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 .login-card {
   width: 380px;

@@ -344,7 +344,10 @@ lmp-acq-db/
 │   └── constants/
 │       └── fields.js                # ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, ALL_FIELDS
 │
-└── favicon.ico
+├── favicon.ico
+└── back-ground.png                  # App-wide background art (world-map tech graphic), referenced from
+                                      #   css/base.css (body) and css/pages.css (.login-wrap) at ~10% visibility
+                                      #   via a `color-mix(in srgb, var(--bg) 90%, transparent)` overlay
 ```
 
 ### CDN scripts loaded in `index.html` (pin exact versions, no npm)
