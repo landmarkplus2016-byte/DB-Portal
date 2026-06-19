@@ -26,7 +26,7 @@ function fieldDispHtml(site, field) {
   const value = fieldValue(site, field);
 
   if (field.type === 'checkbox') {
-    const chip = value ? `<span class="chip-yes">✓ Yes</span>` : `<span class="chip-no">– No</span>`;
+    const chip = value ? `<span class="chip-yes">✓ ${t('bool_yes')}</span>` : `<span class="chip-no">– ${t('bool_no')}</span>`;
     return `<div class="field-disp"><div class="lbl">${t(field.label_key)}</div><div class="val">${chip}</div></div>`;
   }
 

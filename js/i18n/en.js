@@ -67,6 +67,8 @@ export const en = {
   section_acceptance: "Acceptance",
   section_files: "Files",
   no_value: "No value",
+  bool_yes: "Yes",
+  bool_no: "No",
   site_not_found: "Site not found.",
   copied_to_clipboard: "Path copied to clipboard",
 

@@ -21,7 +21,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px 22px 8px;
+  padding-block: 6px 22px;
+  padding-inline: 8px;
 }
 .logo-mark {
   width: 38px;

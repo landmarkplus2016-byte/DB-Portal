@@ -118,7 +118,7 @@ function filesTabBodyHtml() {
                 (f, i) => `
         <div class="file-row" style="border-top:${i === 0 ? 'none' : '1px solid var(--border)'};padding-inline:0;">
           <span class="fname">${escapeHtml(f.name)}</span>
-          <span class="ftag">${escapeHtml(f.section)}</span>
+          <span class="ftag">${t('section_' + f.section.toLowerCase())}</span>
           <span class="fdate">${fmtDate(f.added_at)}</span>
           <button class="btn btn-ghost btn-sm" data-delfile="${escapeHtml(f.file_id)}">🗑</button>
         </div>`
@@ -133,7 +133,7 @@ function filesTabBodyHtml() {
           <div class="field" style="margin:0;"><label>${t('file_path')}</label><input id="newfile-path" type="text"></div>
           <div class="field" style="margin:0;">
             <label>${t('file_section')}</label>
-            <select id="newfile-section">${FILE_SECTION_OPTIONS.map((o) => `<option value="${o}">${o}</option>`).join('')}</select>
+            <select id="newfile-section">${FILE_SECTION_OPTIONS.map((o) => `<option value="${o}">${t('section_' + o.toLowerCase())}</option>`).join('')}</select>
           </div>
           <button class="btn btn-primary btn-sm" id="btn-add-file" type="button">${t('btn_add')}</button>
         </div>

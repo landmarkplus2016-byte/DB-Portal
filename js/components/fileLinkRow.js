@@ -15,7 +15,7 @@ export function fileLinkRowHtml(file) {
     <div class="file-row">
       <span>${fileIcon(file.name)}</span>
       <span class="fname">${escapeHtml(file.name)}</span>
-      <span class="ftag">${escapeHtml(file.section)}</span>
+      <span class="ftag">${t('section_' + file.section.toLowerCase())}</span>
       <a href="${toFileUrl(file.path)}" target="_blank" rel="noopener">${t('btn_open_file')}</a>
       <span class="fdate">${fmtDate(file.added_at)}</span>
     </div>

@@ -67,6 +67,8 @@ export const ar = {
   section_acceptance: "الاستلام",
   section_files: "الملفات",
   no_value: "لا توجد قيمة",
+  bool_yes: "نعم",
+  bool_no: "لا",
   site_not_found: "الموقع غير موجود.",
   copied_to_clipboard: "تم نسخ المسار إلى الحافظة",
 
