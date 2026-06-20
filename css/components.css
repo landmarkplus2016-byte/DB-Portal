@@ -195,8 +195,12 @@
 .tabs {
   display: flex;
   gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  margin-bottom: 18px;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding-inline: 10px;
+  margin-bottom: 0;
 }
 .tab {
   padding: 10px 16px;
@@ -214,6 +218,11 @@
 .tab.active {
   color: var(--primary-dark);
   border-bottom-color: var(--primary);
+}
+.tabs + .card {
+  border-top: none;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  margin-top: -1px;
 }
 .tabdot {
   width: 6px;

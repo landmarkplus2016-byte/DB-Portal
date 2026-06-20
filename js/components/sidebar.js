@@ -42,7 +42,7 @@ export function renderSidebar() {
   return `
     <div class="sidebar">
       <div class="logo">
-        <div class="logo-mark">LMP</div>
+        <img class="logo-mark" src="LMP Logo White.png" alt="LMP">
         <div class="logo-text"><b>Acq. DB</b><span>${escapeHtml(t('app_sub'))}</span></div>
       </div>
       <div class="nav">${navHtml}</div>
