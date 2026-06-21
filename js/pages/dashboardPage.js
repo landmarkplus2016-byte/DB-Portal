@@ -11,9 +11,6 @@ const DONUT_SEGMENTS = [
   { status: 'New', color: 'var(--purple)' },
 ];
 
-const ACTION_COLOR = { CREATE: 'var(--success)', UPDATE: 'var(--primary)', DELETE: 'var(--danger)' };
-const ACTION_VERB_KEY = { CREATE: 'activity_created', UPDATE: 'activity_updated', DELETE: 'activity_deleted' };
-
 const STATUS_LABEL_KEY = { Complete: 'status_complete', 'In progress': 'status_in_progress', New: 'status_new' };
 
 function kpiCardHtml(label, num, color) {
@@ -79,22 +76,24 @@ function statusDonutHtml(counts, total, totalSites) {
     </div>`;
 }
 
-function recentActivityHtml() {
+function recentActivityHtml(sites) {
   const userByName = {};
   DATA.users.forEach((u) => (userByName[u.username] = u.display_name));
 
-  const entries = [...DATA.audit_log]
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  const entries = [...sites]
+    .filter((s) => s.meta?.updated_at)
+    .sort((a, b) => new Date(b.meta.updated_at) - new Date(a.meta.updated_at))
     .slice(0, 10)
-    .map((a) => {
-      const who = userByName[a.user] || a.user;
-      const verb = t(ACTION_VERB_KEY[a.action] || 'activity_updated');
+    .map((s) => {
+      const isNew = s.meta.created_at === s.meta.updated_at;
+      const who = userByName[s.meta.updated_by] || s.meta.updated_by;
+      const verb = t(isNew ? 'activity_created' : 'activity_updated');
       return `
         <div class="activity-item">
-          <span class="adot" style="background:${ACTION_COLOR[a.action] || 'var(--muted)'}"></span>
+          <span class="adot" style="background:${isNew ? 'var(--success)' : 'var(--primary)'}"></span>
           <div>
-            <div class="txt"><b>${escapeHtml(who)}</b> ${verb} <b>${escapeHtml(a.site_id)}</b>${a.field ? ' · ' + escapeHtml(a.field) : ''}</div>
-            <div class="time">${fmtDate(a.timestamp)}</div>
+            <div class="txt"><b>${escapeHtml(who)}</b> ${verb} <b>${escapeHtml(s.site_id)}</b></div>
+            <div class="time">${fmtDate(s.meta.updated_at)}</div>
           </div>
         </div>`;
     })
@@ -149,7 +148,7 @@ export function renderDashboardPage() {
       ${typologyChartHtml(typologyCounts, maxTy)}
       ${statusDonutHtml(counts, total, sites.length)}
     </div>
-    ${recentActivityHtml()}
+    ${recentActivityHtml(sites)}
   `;
 }
 

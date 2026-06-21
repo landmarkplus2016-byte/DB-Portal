@@ -2,21 +2,15 @@ import { DATA, CURRENT_USER, UI } from '../state.js';
 import { t } from '../i18n/i18n.js';
 import { saveUsers, updateMeta } from '../data/dataActions.js';
 import { buildFolderPath } from '../utils/filePaths.js';
-import { fmtDate, escapeHtml } from '../utils/format.js';
+import { escapeHtml } from '../utils/format.js';
 import { modalHtml, bindModalDismiss } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
 import { render } from '../render.js';
 
-const ADMIN_TABS = ['users', 'permissions', 'audit'];
-const ACTION_BADGE_COLOR = {
-  CREATE: ['var(--st-complete-bg)', 'var(--st-complete-tx)'],
-  UPDATE: ['#e8ecfd', 'var(--primary-dark)'],
-  DELETE: ['#fbeaea', 'var(--danger)'],
-};
+const ADMIN_TABS = ['users', 'permissions'];
 
 let userModal = null; // { mode: 'add' | 'edit', userId: string|null, passwordUnlocked: boolean, error: string }
 let permAccessDraft = {}; // { [user_id]: 'all' | 'assigned' | 'region' } — unsaved radio selection per row
-let pendingAuditFocus = null;
 
 function manageableUsers() {
   return DATA.users.filter((u) => u.user_id !== 'bootstrap-admin');
@@ -165,53 +159,6 @@ function permissionsTabHtml() {
   return `<div class="card pad-md">${rows}</div>`;
 }
 
-/* ================= AUDIT LOG TAB ================= */
-
-function actionBadgeHtml(action) {
-  const [bg, tx] = ACTION_BADGE_COLOR[action] || ['var(--st-new-bg)', 'var(--st-new-tx)'];
-  return `<span class="badge" style="background:${bg};color:${tx};">${escapeHtml(action)}</span>`;
-}
-
-function auditTabHtml() {
-  const filter = (UI.auditFilter || '').trim().toLowerCase();
-  let entries = [...DATA.audit_log].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  if (filter) entries = entries.filter((a) => (a.user || '').toLowerCase().includes(filter));
-
-  const rows = entries
-    .map(
-      (a) => `
-      <tr>
-        <td>${fmtDate(a.timestamp)}</td>
-        <td>${escapeHtml(a.user)}</td>
-        <td>${actionBadgeHtml(a.action)}</td>
-        <td>${escapeHtml(a.site_id)}</td>
-        <td>${escapeHtml(a.field) || '—'}</td>
-        <td>${escapeHtml(a.old_value) || '—'}</td>
-        <td>${escapeHtml(a.new_value) || '—'}</td>
-      </tr>`
-    )
-    .join('');
-
-  return `
-    <div class="filters-row">
-      <input type="text" id="audit-filter" placeholder="${t('audit_filter_placeholder')}" value="${escapeHtml(UI.auditFilter || '')}">
-    </div>
-    <div class="card">
-      ${
-        entries.length
-          ? `
-      <table>
-        <thead><tr>
-          <th>${t('col_timestamp')}</th><th>${t('col_username')}</th><th>${t('col_action')}</th><th>${t('col_site_id')}</th>
-          <th>${t('col_field')}</th><th>${t('col_old_value')}</th><th>${t('col_new_value')}</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`
-          : `<div class="empty-state">${t('no_audit_entries')}</div>`
-      }
-    </div>`;
-}
-
 /* ================= SETTINGS ================= */
 
 function settingsSectionHtml() {
@@ -237,10 +184,7 @@ export function renderAdminPage() {
   const tab = UI.adminTab || 'users';
   const tabsHtml = ADMIN_TABS.map((tb) => `<button class="${tab === tb ? 'active' : ''}" data-admintab="${tb}">${t('tab_' + tb)}</button>`).join('');
 
-  let body = '';
-  if (tab === 'users') body = usersTabHtml();
-  else if (tab === 'permissions') body = permissionsTabHtml();
-  else body = auditTabHtml();
+  const body = tab === 'permissions' ? permissionsTabHtml() : usersTabHtml();
 
   return `
     <div class="admin-tabs">${tabsHtml}</div>
@@ -262,7 +206,6 @@ export function bindAdminPageEvents() {
   bindUsersTabEvents();
   bindModalEvents();
   bindPermissionsTabEvents();
-  bindAuditTabEvents();
   bindSettingsEvents();
 }
 
@@ -417,24 +360,6 @@ function bindPermissionsTabEvents() {
       render();
     });
   });
-}
-
-function bindAuditTabEvents() {
-  const input = document.getElementById('audit-filter');
-  input?.addEventListener('input', (e) => {
-    pendingAuditFocus = e.target.selectionStart;
-    UI.auditFilter = e.target.value;
-    render();
-  });
-
-  if (pendingAuditFocus !== null) {
-    const el = document.getElementById('audit-filter');
-    if (el) {
-      el.focus();
-      el.setSelectionRange(pendingAuditFocus, pendingAuditFocus);
-    }
-    pendingAuditFocus = null;
-  }
 }
 
 function bindSettingsEvents() {

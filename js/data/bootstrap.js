@@ -24,6 +24,5 @@ export function makeBootstrapData() {
     },
     users: [BOOTSTRAP_ADMIN],
     sites: [],
-    audit_log: [],
   };
 }

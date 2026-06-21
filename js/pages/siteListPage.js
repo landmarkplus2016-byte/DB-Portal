@@ -9,6 +9,7 @@ import { fmtDate, escapeHtml } from '../utils/format.js';
 import { render } from '../render.js';
 
 const TYPOLOGY_OPTIONS = ACQ_FIELDS.find((f) => f.key === 'typology').options;
+const PAGE_SIZE = 50;
 
 let pendingFocus = null;
 
@@ -44,9 +45,22 @@ export function renderSiteListActions() {
   return `<button class="btn btn-primary btn-sm" id="btn-add-site-top">+ ${t('btn_add_site')}</button>`;
 }
 
+function pagerHtml(page, totalPages) {
+  return `
+    <div class="pager">
+      <button class="btn btn-ghost btn-sm" id="pager-prev" ${page <= 1 ? 'disabled' : ''}>${t('btn_prev')}</button>
+      <span class="pager-info">${t('pager_page')} ${page} / ${totalPages}</span>
+      <button class="btn btn-ghost btn-sm" id="pager-next" ${page >= totalPages ? 'disabled' : ''}>${t('btn_next')}</button>
+    </div>`;
+}
+
 export function renderSiteListPage() {
-  const sites = getFilteredSites();
+  const allSites = getFilteredSites();
   const canEdit = CURRENT_USER.role !== 'viewer';
+
+  const totalPages = Math.max(1, Math.ceil(allSites.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, UI.sitePage || 1), totalPages);
+  const sites = allSites.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const rowsHtml = sites
     .map((s) => {
@@ -83,10 +97,10 @@ export function renderSiteListPage() {
         ).join('')}
       </select>
     </div>
-    <div class="results-count">${sites.length} ${t('sites_label')}</div>
+    <div class="results-count">${allSites.length} ${t('sites_label')}</div>
     <div class="card">
       ${
-        sites.length
+        allSites.length
           ? `
       <table>
         <thead><tr>
@@ -98,6 +112,7 @@ export function renderSiteListPage() {
           : `<div class="empty-state"><div class="ic">🗂️</div>${t('empty_sites')}</div>`
       }
     </div>
+    ${totalPages > 1 ? pagerHtml(page, totalPages) : ''}
   `;
 }
 
@@ -108,15 +123,27 @@ export function bindSiteListPageEvents() {
   searchInput?.addEventListener('input', (e) => {
     pendingFocus = e.target.selectionStart;
     UI.search = e.target.value;
+    UI.sitePage = 1;
     render();
   });
 
   document.getElementById('filter-status')?.addEventListener('change', (e) => {
     UI.statusFilter = e.target.value;
+    UI.sitePage = 1;
     render();
   });
   document.getElementById('filter-typology')?.addEventListener('change', (e) => {
     UI.typologyFilter = e.target.value;
+    UI.sitePage = 1;
+    render();
+  });
+
+  document.getElementById('pager-prev')?.addEventListener('click', () => {
+    UI.sitePage = (UI.sitePage || 1) - 1;
+    render();
+  });
+  document.getElementById('pager-next')?.addEventListener('click', () => {
+    UI.sitePage = (UI.sitePage || 1) + 1;
     render();
   });
 

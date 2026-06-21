@@ -2,12 +2,12 @@ import { DATA, UI } from '../state.js';
 import { t, getLanguage, setLanguage } from '../i18n/i18n.js';
 import { go } from '../router.js';
 import { login } from '../data/auth.js';
-import { loadJSON } from '../data/dataActions.js';
+import { connectDataFile, reconnectDataFile } from '../data/dataActions.js';
 import { render } from '../render.js';
 
 export function renderLoginPage() {
   const lang = getLanguage();
-  const showUpload = DATA.sites.length === 0 && DATA.users.length === 1;
+  const needsConnect = DATA.sites.length === 0 && DATA.users.length === 1;
 
   return `
   <div class="login-wrap">
@@ -23,11 +23,11 @@ export function renderLoginPage() {
         <h2>${t('app_name')}</h2>
         <p>${t('app_sub')}</p>
       </div>
-      ${showUpload ? `
+      ${needsConnect ? `
       <div class="upload-box">
-        <p>${t('upload_json_prompt')}</p>
-        <input type="file" id="json-upload" accept=".json" style="display:none;">
-        <button class="btn btn-ghost btn-sm" id="btn-upload-trigger" type="button">⇧ ${t('btn_upload_json')}</button>
+        <p>${t('connect_file_prompt')}</p>
+        <button class="btn btn-ghost btn-sm" id="btn-connect-file" type="button">📁 ${UI.needsReconnect ? t('btn_reconnect_file') : t('btn_connect_file')}</button>
+        ${UI.needsReconnect ? `<div><button class="btn btn-ghost btn-sm" id="btn-different-file" type="button" style="margin-top:6px;">${t('btn_use_different_file')}</button></div>` : ''}
         ${UI.loginUploadMsg ? `<div class="${UI.loginUploadMsg.ok ? 'note-ok' : 'note-bad'}">${UI.loginUploadMsg.text}</div>` : ''}
       </div>` : ''}
       <div class="field">
@@ -48,25 +48,24 @@ export function renderLoginPage() {
   </div>`;
 }
 
+async function handleConnect(action) {
+  const result = await action();
+  if (result.cancelled) return;
+  UI.needsReconnect = false;
+  UI.loginUploadMsg = result.ok ? { ok: true, text: t('upload_ok') } : { ok: false, text: t('upload_bad') };
+  render();
+}
+
 export function bindLoginPageEvents() {
   document.querySelectorAll('[data-lang]').forEach((btn) => {
     btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
   });
 
-  const fileInput = document.getElementById('json-upload');
-  document.getElementById('btn-upload-trigger')?.addEventListener('click', () => fileInput.click());
-  fileInput?.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = loadJSON(reader.result);
-      UI.loginUploadMsg = result.ok
-        ? { ok: true, text: t('upload_ok') }
-        : { ok: false, text: t('upload_bad') };
-      render();
-    };
-    reader.readAsText(file);
+  document.getElementById('btn-connect-file')?.addEventListener('click', () => {
+    handleConnect(UI.needsReconnect ? reconnectDataFile : connectDataFile);
+  });
+  document.getElementById('btn-different-file')?.addEventListener('click', () => {
+    handleConnect(connectDataFile);
   });
 
   document.getElementById('btn-toggle-pw')?.addEventListener('click', () => {

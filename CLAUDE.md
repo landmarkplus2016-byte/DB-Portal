@@ -8,11 +8,11 @@
 
 A standalone browser app to replace a Microsoft Access database used for managing telecom/tower site acquisition work in Egypt.
 
-- **Admin / Data Entry:** Enters and edits site records, manages all user accounts and permissions, exports the master JSON file to the shared drive
-- **Viewers (×20):** Download the JSON from the shared drive, upload it into the app, search and view site data, open files on the company server, export to Excel/PDF
+- **Single editor (admin/data_entry):** Enters and edits site records, manages all user accounts and permissions, clicks "Save" to write the master JSON file directly back to its location on the shared drive
+- **Viewers (×20):** Connect to the same shared-drive JSON file once, then click "Refresh" to pull the latest version — search and view site data, open files on the company server, export to Excel/PDF
 - Hosted on **GitHub Pages** (static site — no server)
 - **No backend. No API. No database server. No build step. No npm — ever.** Pure HTML, CSS, and vanilla JavaScript, served as-is.
-- All data lives in a single JSON file that the admin exports and saves to a company shared drive
+- All data lives in a single JSON file on a company shared drive. The browser reads/writes it directly via the File System Access API (Chrome/Edge only — see "How the App Works")
 
 ---
 
@@ -38,41 +38,45 @@ GitHub Pages serves the repo directly — no build/deploy script, no `gh-pages` 
 
 ## Non-Negotiable Rules
 
-1. **No backend calls at runtime** — zero `fetch()` calls to any server. The app is 100% offline after load (except loading the CDN script tags for SheetJS/jsPDF, which only happens once on page load)
+1. **No backend calls at runtime** — zero `fetch()` calls to any server. The app is 100% offline after load (except loading the CDN script tags for SheetJS/jsPDF, which only happens once on page load). Reading/writing the shared JSON file via the File System Access API is a direct local/mapped-drive filesystem operation, not a network call, so it does not violate this rule
 2. **No npm, no build step, ever** — if a feature seems to require installing a package, find a CDN `<script>` tag alternative or write it in plain JS instead
-3. **No localStorage for site data** — all site data, users, and audit log live in JS variables (in-memory state) only. localStorage is only used for UI display preferences: language (`lmp_lang`) and accent theme (`lmp_theme`)
+3. **No localStorage for site data** — all site data and users live in JS variables (in-memory state) only. localStorage is only used for UI display preferences: language (`lmp_lang`) and accent theme (`lmp_theme`). The one exception: the connected data file's `FileSystemFileHandle` is persisted in IndexedDB (see "How the App Works") so the browser can resume the same shared file across sessions — this stores an opaque OS file reference, never site data itself, so it doesn't violate this rule
 4. **HashRouter pattern only** — routes are `#/...` fragments handled by reading `location.hash`. GitHub Pages does not support server-side routing, and hash routing needs zero configuration
-5. **Never delete audit log entries** — audit log is append-only, always
-6. **Permissions filter always applied** — `filterSitesByPermissions(sites, user)` must run before any site list or detail renders
-7. **Bootstrap admin is memory-only** — never written to JSON. Exists only as a hardcoded fallback when no JSON is loaded
-8. **Cannot delete last admin** — always validate before any user deletion
-9. **All UI text through `t('key')`** — never hardcode English or Arabic strings in JS template strings
-10. **Network path warning always shown** — never show a file link or folder button without the server network warning notice
-11. **One file, one job** — never add logic to a file that belongs in another file (see File Map)
-12. **Visual design comes from `design/lmp_prototype.html`, as refined by the Design System section below** — the sidebar (navy) and accent color (switchable via the theme palette) have since diverged from the prototype's literal colors; the Design System section is the current source of truth where the two disagree
+5. **Permissions filter always applied** — `filterSitesByPermissions(sites, user)` must run before any site list or detail renders
+6. **Bootstrap admin is memory-only** — never written to JSON. Exists only as a hardcoded fallback when no JSON is loaded
+7. **Cannot delete last admin** — always validate before any user deletion
+8. **All UI text through `t('key')`** — never hardcode English or Arabic strings in JS template strings
+9. **Network path warning always shown** — never show a file link or folder button without the server network warning notice
+10. **One file, one job** — never add logic to a file that belongs in another file (see File Map)
+11. **Visual design comes from `design/lmp_prototype.html`, as refined by the Design System section below** — the sidebar (navy) and accent color (switchable via the theme palette) have since diverged from the prototype's literal colors; the Design System section is the current source of truth where the two disagree
+12. **Site list is always paginated** — `js/pages/siteListPage.js` renders 50 sites per page (`PAGE_SIZE`), never the full filtered set, to keep `innerHTML` re-renders fast as the dataset grows into the thousands
+13. **Export size caps are enforced before download** — PDF site-card exports are capped at 100 sites, Excel/CSV at 5,000 (see "Export Limits"); never silently truncate the export — block it and tell the user to narrow their filters
 
 ---
 
 ## How the App Works — Read This Carefully
 
-This is a **JSON-file-driven app**. There is no backend.
+This is a **JSON-file-driven app**. There is no backend. Sync happens via the browser's **File System Access API** (`showOpenFilePicker`, `FileSystemFileHandle.createWritable()`), which lets the page read and write a file on a mapped network drive (e.g. `Z:\`) directly — no download, no manual re-upload. **Chrome/Edge only** — this is the one team-wide browser assumption the whole sync model depends on; there is no fallback path for other browsers.
 
 ```
-Admin enters/edits data in the app
+First visit (any user): click "Connect data file" → OS picker → pick the shared .json file
           ↓
-All changes live in JS state (memory only)
+Handle is remembered in IndexedDB (not the data itself, just the file reference)
           ↓
-Admin clicks "Export JSON" → file downloads
+Future visits: app auto-reconnects silently; if the browser needs permission
+re-granted, a one-click "Reconnect" replaces the picker dialog
           ↓
-Admin saves JSON to company shared drive (replaces old file)
+Admin/data_entry edits sites → changes live in JS state (memory only) → IS_DIRTY
           ↓
-Viewers download the new JSON from shared drive
+Admin clicks "Save" → writes the full JSON straight back to the connected file on the shared drive
           ↓
-Viewers open the app (index.html) → upload JSON → browse data
+Viewers click "Refresh" → re-reads the same file → DATA replaced, CURRENT_USER re-synced
 ```
 
-**The shared drive JSON is the single source of truth.**
-When admin adds a user, changes a password, or deactivates someone — nothing changes for other users until admin exports and the other users download the new JSON. This is the intended sync mechanism. It must be communicated clearly in the app UI.
+**The shared drive JSON file is the single source of truth.**
+There is exactly **one editor** (admin or data_entry) at a time — everyone else is a viewer. When the editor adds a user, changes a password, or edits a site, nothing changes for anyone else until they click "Save" and the other users click "Refresh". This is the intended sync mechanism, and it must be communicated clearly in the app UI. Because there is a single editor, there is no concurrent-write conflict to resolve — "Save" always overwrites the whole file.
+
+A manual JSON import is still available as `loadJSON(jsonString)` in `js/data/dataActions.js` for edge cases (e.g. opening a one-off backup copy), but it is not exposed as a primary UI flow.
 
 ---
 
@@ -80,9 +84,9 @@ When admin adds a user, changes a password, or deactivates someone — nothing c
 
 | Role | Can do |
 |---|---|
-| `admin` | Everything: manage users + permissions, add/edit/delete sites, link files, export JSON, view audit log |
-| `data_entry` | Add/edit sites (per permissions), link file paths, export (if permitted by admin) |
-| `viewer` | Search/view sites (per permissions), export to Excel/PDF (if permitted by admin), open file paths |
+| `admin` | Everything: manage users + permissions, add/edit/delete sites, link files, save the data file, refresh from the data file |
+| `data_entry` | Add/edit sites (per permissions), link file paths, save the data file, export (if permitted by admin) |
+| `viewer` | Search/view sites (per permissions), refresh from the data file, export to Excel/PDF (if permitted by admin), open file paths |
 
 ### Per-user permission fields
 
@@ -211,20 +215,15 @@ This account exists only in memory. It is never written to any JSON. The real ad
         "updated_by": "ahmed.hassan"
       }
     }
-  ],
-  "audit_log": [
-    {
-      "timestamp": "2024-05-10T14:22:00",
-      "user": "ahmed.hassan",
-      "action": "UPDATE",
-      "site_id": "EG-CAI-001",
-      "field": "contract_date",
-      "old_value": "",
-      "new_value": "2024-01-15"
-    }
   ]
 }
 ```
+
+There is no `audit_log` array — see "Why there's no audit log" below. Each site's own `meta.created_at`/`created_by`/`updated_at`/`updated_by` is the only change-tracking data kept, and it's enough to tell "created" apart from "updated" (compare `created_at` to `updated_at`) for the dashboard's Recent Activity card.
+
+### Why there's no audit log
+
+There is exactly one editor at a time (admin or data_entry); everyone else is a read-only viewer. A per-field audit trail exists to answer "who changed what and when" across multiple concurrent editors — with a single editor that question rarely comes up, and the trail would have been the fastest-growing, never-pruned part of the JSON file (it's append-only by nature). `site.meta.updated_at`/`updated_by` already covers "who last touched this site and when," which is enough for the single-editor workflow. If a second editor role is ever introduced, re-evaluate this decision before assuming no audit trail is needed.
 
 ---
 
@@ -278,6 +277,17 @@ A `canAccessRoute(user, route)` guard in `js/utils/permissions.js` runs before e
 
 ---
 
+## Export Limits
+
+| Format | Cap | Why |
+|---|---|---|
+| PDF (site cards via jsPDF/autotable) | 100 sites | jsPDF/autotable rendering one page per site can stall the tab well before this; capped low rather than letting it choke |
+| Excel (.xlsx) / CSV (SheetJS) | 5,000 sites | SheetJS handles large row counts fine — this is a sanity guard, not a real bottleneck |
+
+Enforced in `js/pages/exportPage.js`: the export buttons are disabled and an inline warning (`export_limit_pdf` / `export_limit_spreadsheet`) shows once the current filter's match count exceeds the cap. Never truncate the export silently — always block it and tell the user to narrow their filters first. If a real need for bigger exports comes up, raise the cap rather than silently truncating data.
+
+---
+
 ## File Map — One Job Per File
 
 No `node_modules`, no `package.json`, no config files for bundlers. Every file is loaded directly by the browser.
@@ -312,21 +322,30 @@ lmp-acq-db/
 │   │
 │   ├── data/
 │   │   ├── bootstrap.js             # BOOTSTRAP_ADMIN, makeMockData() for first-run/demo data
-│   │   ├── dataActions.js           # loadJSON(), exportJSON(), addSite(), updateSite(), deleteSite(), saveUsers(), updateMeta()
+│   │   ├── dataActions.js           # loadJSON(), addSite(), updateSite(), deleteSite(), saveUsers(), updateMeta(),
+│   │   │                             #   plus the File System Access sync layer: hasFileSystemAccess(), isFileConnected(),
+│   │   │                             #   connectDataFile() (first-time picker), tryAutoReconnect() (silent, on boot),
+│   │   │                             #   reconnectDataFile() (one-click permission re-grant), saveToFile(), refreshFromFile()
+│   │   │                             #   — the FileSystemFileHandle itself is persisted to IndexedDB ('lmp-acq-db' / 'handles'),
+│   │   │                             #   not localStorage and not the JSON data
 │   │   └── auth.js                  # login(), logout()
 │   │
 │   ├── pages/
-│   │   ├── loginPage.js             # renderLoginPage() → HTML string + bindLoginEvents()
-│   │   ├── dashboardPage.js         # renderDashboardPage() + bindDashboardEvents()
-│   │   ├── siteListPage.js          # renderSiteListPage() + bindSiteListEvents()
+│   │   ├── loginPage.js             # renderLoginPage() + bindLoginPageEvents() — shows "Connect"/"Reconnect data file"
+│   │   │                             #   instead of a manual upload box when no data is loaded yet
+│   │   ├── dashboardPage.js         # renderDashboardPage() + bindDashboardEvents() — Recent Activity is derived from
+│   │   │                             #   each site's meta.created_at/updated_at, not an audit log
+│   │   ├── siteListPage.js          # renderSiteListPage() + bindSiteListEvents() — paginates filtered results,
+│   │   │                             #   PAGE_SIZE = 50, resets to page 1 on any search/filter change
 │   │   ├── siteDetailPage.js        # renderSiteDetailPage() + bindSiteDetailEvents()
 │   │   ├── siteFormPage.js          # renderSiteFormPage() + bindSiteFormEvents()
-│   │   ├── exportPage.js            # renderExportPage() + bindExportEvents()
-│   │   └── adminPage.js             # renderAdminPage() + bindAdminEvents()
+│   │   ├── exportPage.js            # renderExportPage() + bindExportEvents() — enforces the Export Limits caps
+│   │   └── adminPage.js             # renderAdminPage() + bindAdminEvents() — Users + Permissions tabs only (no Audit Log tab)
 │   │
 │   ├── components/
 │   │   ├── sidebar.js               # renderSidebar()
-│   │   ├── topbar.js                # renderTopbar(title, sub, actionsHtml)
+│   │   ├── topbar.js                # renderTopbar(title, sub, actionsHtml) — renders "Save"/"Refresh" buttons
+│   │   │                             #   (gated on role + isFileConnected()) instead of an "Export JSON" download button
 │   │   ├── badge.js                 # statusBadgeHtml(status)
 │   │   ├── modal.js                 # modalHtml(title, bodyHtml, footHtml), openModal(), closeModal()
 │   │   ├── toast.js                 # showToast(msg, type)
@@ -519,12 +538,14 @@ Use CSS logical properties everywhere for RTL support (`margin-inline-start`, `p
 - Never add `package.json`, `node_modules`, or any npm dependency
 - Never introduce a bundler, transpiler, or build step of any kind
 - Never use React, Vue, or any UI framework — plain JS template-literal rendering only
-- Never persist site data, users, or audit log to localStorage
+- Never persist site data or users to localStorage (the connected file's handle in IndexedDB is the one sanctioned exception — see Rule #3)
 - Never make any `fetch()` call to an external API at runtime
 - Never hardcode any visible string in JS — always use `t('key')`
 - Never show a file link or folder button without the network warning notice
 - Never allow deletion of the last admin user
-- Never modify audit log entries — append only, always
 - Never store status in the JSON — always derive it with `deriveStatus()`
 - Never hardcode a hex color outside `css/tokens.css` — always reference the CSS variable
+- Never render the full filtered site list unpaginated — always slice to `PAGE_SIZE`
+- Never let an export silently truncate over its cap — block it and tell the user to narrow filters
+- Never reintroduce a per-field audit log without first confirming a second concurrent editor role is actually being added (see "Why there's no audit log")
 - Never add a feature not in this file without confirming with the project owner (Khaled)

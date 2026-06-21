@@ -14,8 +14,10 @@ export const en = {
   theme_crimson: "Crimson theme",
 
   // Login / auth
-  upload_json_prompt: "No data loaded yet. Upload the master JSON file from the shared drive to begin.",
-  btn_upload_json: "Upload JSON file",
+  connect_file_prompt: "No data loaded yet. Connect to the shared data file (.json) on the company server to begin.",
+  btn_connect_file: "Connect data file",
+  btn_reconnect_file: "Reconnect data file",
+  btn_use_different_file: "Use a different file",
   username: "Username",
   password: "Password",
   btn_sign_in: "Sign in",
@@ -37,7 +39,6 @@ export const en = {
   sites_label: "sites",
   activity_created: "created",
   activity_updated: "updated",
-  activity_deleted: "deleted",
 
   // Site list
   btn_add_site: "Add site",
@@ -58,6 +59,9 @@ export const en = {
   status_complete: "Complete",
   status_in_progress: "In progress",
   status_new: "New",
+  btn_prev: "Previous",
+  btn_next: "Next",
+  pager_page: "Page",
 
   // Site detail
   back: "Back",
@@ -100,14 +104,14 @@ export const en = {
   export_csv_d: "Plain comma-separated values for any tool.",
   export_pdf: "PDF Site Cards",
   export_pdf_d: "One printable page per site.",
-  btn_export_json: "Export JSON",
   btn_download: "Download",
   export_done: "Export downloaded",
+  export_limit_pdf: "Too many sites for a PDF export (max {max}). Narrow your filters and try again.",
+  export_limit_spreadsheet: "Too many sites for this export (max {max}). Narrow your filters and try again.",
 
   // Admin
   tab_users: "Users",
   tab_permissions: "Permissions",
-  tab_audit: "Audit Log",
   tab_settings: "Settings",
   col_username: "Username",
   col_display_name: "Display Name",
@@ -122,13 +126,6 @@ export const en = {
   settings_base_path_note: "This change only affects new file path suggestions — existing file paths are unchanged.",
   settings_preview: "New sites will use:",
   settings_saved: "Settings saved",
-  col_timestamp: "Timestamp",
-  col_action: "Action",
-  col_field: "Field",
-  col_old_value: "Old Value",
-  col_new_value: "New Value",
-  audit_filter_placeholder: "Filter by username",
-  no_audit_entries: "No audit log entries.",
   btn_change: "Change",
   field_active: "Active",
   confirm_delete_user: "Delete this user? This cannot be undone.",
@@ -145,8 +142,16 @@ export const en = {
   col_can_export: "Can Export",
   col_can_upload_files: "Can Upload Files",
 
-  // Unsaved changes
+  // Unsaved changes / file sync
   unsaved_changes: "Unsaved changes",
+  btn_save_file: "Save",
+  btn_refresh_data: "Refresh",
+  save_done: "Saved to the data file.",
+  save_failed: "Couldn't save — check file permissions and try again.",
+  refresh_done: "Data refreshed.",
+  refresh_failed: "Couldn't refresh — check the file is accessible and try again.",
+  confirm_refresh_dirty: "You have unsaved changes that will be lost. Refresh anyway?",
+  account_removed: "Your account is no longer available in the latest data. Please sign in again.",
 
   // Field labels (ACQ)
   field_address: "Address",

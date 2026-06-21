@@ -2,7 +2,7 @@ import { DATA, CURRENT_USER, UI, ROUTE_PARAM } from '../state.js';
 import { t } from '../i18n/i18n.js';
 import { go } from '../router.js';
 import { addSite, updateSite } from '../data/dataActions.js';
-import { ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, ALL_FIELDS, FILE_SECTION_OPTIONS } from '../constants/fields.js';
+import { ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, FILE_SECTION_OPTIONS } from '../constants/fields.js';
 import { buildFolderPath, buildFilePath } from '../utils/filePaths.js';
 import { fmtDate, escapeHtml } from '../utils/format.js';
 import { showToast } from '../components/toast.js';
@@ -16,7 +16,6 @@ const SECTIONS = [
 ];
 
 let formDraft = null;
-let originalSnapshot = null;
 let draftParam = null;
 
 function blankSiteDraft() {
@@ -36,14 +35,6 @@ function blankSiteDraft() {
 function sectionHasData(sectionKey) {
   if (sectionKey === 'files') return formDraft.files.length > 0;
   return Object.values(formDraft[sectionKey]).some((v) => (typeof v === 'boolean' ? v === true : !!v));
-}
-
-function diffChangedFields(original, draft) {
-  return ALL_FIELDS.filter((f) => original[f.section][f.key] !== draft[f.section][f.key]).map((f) => ({
-    key: f.key,
-    old_value: original[f.section][f.key],
-    new_value: draft[f.section][f.key],
-  }));
 }
 
 function syncFormInputs() {
@@ -157,7 +148,6 @@ export function renderSiteFormPage() {
 
   if (!formDraft || draftParam !== ROUTE_PARAM) {
     formDraft = isNew ? blankSiteDraft() : JSON.parse(JSON.stringify(existingSite));
-    originalSnapshot = isNew ? null : JSON.parse(JSON.stringify(existingSite));
     draftParam = ROUTE_PARAM;
     UI.formTab = 'acq';
     UI.siteIdErr = '';
@@ -261,7 +251,6 @@ export function bindSiteFormPageEvents() {
     const isNew = ROUTE_PARAM === 'new';
     const target = isNew ? null : ROUTE_PARAM;
     formDraft = null;
-    originalSnapshot = null;
     draftParam = null;
     go(isNew ? 'sites' : 'site-detail', target);
   });
@@ -287,19 +276,16 @@ export function bindSiteFormPageEvents() {
 
     if (isNew) {
       formDraft.meta.updated_at = new Date().toISOString();
-      addSite(formDraft, CURRENT_USER);
+      addSite(formDraft);
     } else {
-      const changedFields = diffChangedFields(originalSnapshot, formDraft);
       updateSite(
         ROUTE_PARAM,
         { acq: formDraft.acq, sta: formDraft.sta, construction: formDraft.construction, acceptance: formDraft.acceptance, files: formDraft.files },
-        CURRENT_USER,
-        changedFields
+        CURRENT_USER
       );
     }
 
     formDraft = null;
-    originalSnapshot = null;
     draftParam = null;
     showToast(t('site_saved'));
     go('site-detail', savedId);

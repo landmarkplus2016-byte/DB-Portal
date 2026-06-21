@@ -14,8 +14,10 @@ export const ar = {
   theme_crimson: "السمة الحمراء",
 
   // Login / auth
-  upload_json_prompt: "لا توجد بيانات محمّلة بعد. ارفع ملف JSON الرئيسي من المحرك المشترك للبدء.",
-  btn_upload_json: "رفع ملف JSON",
+  connect_file_prompt: "لا توجد بيانات محمّلة بعد. اربط ملف البيانات (.json) على خادم الشركة للبدء.",
+  btn_connect_file: "ربط ملف البيانات",
+  btn_reconnect_file: "إعادة ربط ملف البيانات",
+  btn_use_different_file: "استخدام ملف آخر",
   username: "اسم المستخدم",
   password: "كلمة المرور",
   btn_sign_in: "تسجيل الدخول",
@@ -37,7 +39,6 @@ export const ar = {
   sites_label: "موقع",
   activity_created: "أنشأ",
   activity_updated: "حدّث",
-  activity_deleted: "حذف",
 
   // Site list
   btn_add_site: "إضافة موقع",
@@ -58,6 +59,9 @@ export const ar = {
   status_complete: "مكتمل",
   status_in_progress: "قيد التنفيذ",
   status_new: "جديد",
+  btn_prev: "السابق",
+  btn_next: "التالي",
+  pager_page: "صفحة",
 
   // Site detail
   back: "رجوع",
@@ -100,14 +104,14 @@ export const ar = {
   export_csv_d: "قيم مفصولة بفواصل لأي أداة.",
   export_pdf: "بطاقات PDF",
   export_pdf_d: "صفحة واحدة قابلة للطباعة لكل موقع.",
-  btn_export_json: "تصدير JSON",
   btn_download: "تحميل",
   export_done: "تم تحميل الملف",
+  export_limit_pdf: "عدد المواقع كبير جدًا لتصدير PDF (الحد الأقصى {max}). ضيّق نطاق التصفية وحاول مرة أخرى.",
+  export_limit_spreadsheet: "عدد المواقع كبير جدًا لهذا التصدير (الحد الأقصى {max}). ضيّق نطاق التصفية وحاول مرة أخرى.",
 
   // Admin
   tab_users: "المستخدمون",
   tab_permissions: "الصلاحيات",
-  tab_audit: "سجل التدقيق",
   tab_settings: "الإعدادات",
   col_username: "اسم المستخدم",
   col_display_name: "الاسم الظاهر",
@@ -122,13 +126,6 @@ export const ar = {
   settings_base_path_note: "هذا التغيير يؤثر فقط على اقتراحات المسارات الجديدة — المسارات الحالية لا تتغير.",
   settings_preview: "ستستخدم المواقع الجديدة:",
   settings_saved: "تم حفظ الإعدادات",
-  col_timestamp: "الوقت",
-  col_action: "الإجراء",
-  col_field: "الحقل",
-  col_old_value: "القيمة القديمة",
-  col_new_value: "القيمة الجديدة",
-  audit_filter_placeholder: "تصفية باسم المستخدم",
-  no_audit_entries: "لا توجد سجلات تدقيق.",
   btn_change: "تغيير",
   field_active: "نشط",
   confirm_delete_user: "حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -145,8 +142,16 @@ export const ar = {
   col_can_export: "يمكنه التصدير",
   col_can_upload_files: "يمكنه رفع الملفات",
 
-  // Unsaved changes
+  // Unsaved changes / file sync
   unsaved_changes: "تغييرات غير محفوظة",
+  btn_save_file: "حفظ",
+  btn_refresh_data: "تحديث",
+  save_done: "تم الحفظ في ملف البيانات.",
+  save_failed: "تعذّر الحفظ — تحقق من صلاحيات الملف وحاول مرة أخرى.",
+  refresh_done: "تم تحديث البيانات.",
+  refresh_failed: "تعذّر التحديث — تحقق من إمكانية الوصول إلى الملف وحاول مرة أخرى.",
+  confirm_refresh_dirty: "لديك تغييرات غير محفوظة ستُفقد. تحديث على أي حال؟",
+  account_removed: "حسابك غير متوفر في أحدث نسخة من البيانات. يرجى تسجيل الدخول مرة أخرى.",
 
   // Field labels (ACQ)
   field_address: "العنوان",

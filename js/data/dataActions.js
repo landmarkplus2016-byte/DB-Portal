@@ -1,35 +1,46 @@
 import { DATA, setData, markDirty, clearDirty } from '../state.js';
 
-function isoDateStamp() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+const HANDLE_DB_NAME = 'lmp-acq-db';
+const HANDLE_STORE_NAME = 'handles';
+const HANDLE_KEY = 'data-file';
+
+let fileHandle = null;
+
+export function hasFileSystemAccess() {
+  return typeof window.showOpenFilePicker === 'function';
 }
 
-function appendAudit({ user, action, site_id, field = null, old_value = null, new_value = null }) {
-  DATA.audit_log.push({
-    timestamp: new Date().toISOString(),
-    user: user.username,
-    action,
-    site_id,
-    field,
-    old_value,
-    new_value,
+export function isFileConnected() {
+  return !!fileHandle;
+}
+
+function openHandleDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(HANDLE_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(HANDLE_STORE_NAME);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
-function triggerDownload(filename, content, mimeType) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+async function storeHandle(handle) {
+  const db = await openHandleDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(HANDLE_STORE_NAME, 'readwrite');
+    tx.objectStore(HANDLE_STORE_NAME).put(handle, HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadStoredHandle() {
+  const db = await openHandleDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(HANDLE_STORE_NAME, 'readonly');
+    const req = tx.objectStore(HANDLE_STORE_NAME).get(HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export function loadJSON(jsonString) {
@@ -44,7 +55,57 @@ export function loadJSON(jsonString) {
   return { ok: true };
 }
 
-export function exportJSON(currentUser) {
+async function readHandle(handle) {
+  const file = await handle.getFile();
+  const text = await file.text();
+  return loadJSON(text);
+}
+
+/** First-time setup: user picks the shared JSON file via the OS file picker. */
+export async function connectDataFile() {
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'LMP data file', accept: { 'application/json': ['.json'] } }],
+    });
+    fileHandle = handle;
+    await storeHandle(handle);
+    return readHandle(handle);
+  } catch (err) {
+    if (err.name === 'AbortError') return { ok: false, cancelled: true };
+    return { ok: false, error: err.message };
+  }
+}
+
+/** Called on app boot — tries to silently resume the previously connected file without a picker dialog. */
+export async function tryAutoReconnect() {
+  const handle = await loadStoredHandle().catch(() => null);
+  if (!handle) return { ok: false, error: 'no_handle' };
+  let permission;
+  try {
+    permission = await handle.queryPermission({ mode: 'read' });
+  } catch {
+    return { ok: false, error: 'no_handle' };
+  }
+  if (permission !== 'granted') return { ok: false, error: 'permission_needed' };
+  fileHandle = handle;
+  return readHandle(handle);
+}
+
+/** Called from a click handler (user gesture) to re-grant permission on the previously connected file. */
+export async function reconnectDataFile() {
+  const handle = await loadStoredHandle().catch(() => null);
+  if (!handle) return { ok: false, error: 'no_handle' };
+  const granted = await handle.requestPermission({ mode: 'read' });
+  if (granted !== 'granted') return { ok: false, error: 'permission_denied' };
+  fileHandle = handle;
+  return readHandle(handle);
+}
+
+export async function saveToFile(currentUser) {
+  if (!fileHandle) return { ok: false, error: 'no_handle' };
+  const granted = await fileHandle.requestPermission({ mode: 'readwrite' });
+  if (granted !== 'granted') return { ok: false, error: 'permission_denied' };
+
   const exportData = {
     ...DATA,
     meta: {
@@ -53,13 +114,23 @@ export function exportJSON(currentUser) {
       exported_by: currentUser.username,
     },
   };
-  triggerDownload(`lmp-data-${isoDateStamp()}.json`, JSON.stringify(exportData, null, 2), 'application/json');
+
+  const writable = await fileHandle.createWritable();
+  await writable.write(JSON.stringify(exportData, null, 2));
+  await writable.close();
   clearDirty();
+  return { ok: true };
 }
 
-export function addSite(site, user) {
+export async function refreshFromFile() {
+  if (!fileHandle) return { ok: false, error: 'no_handle' };
+  const granted = await fileHandle.requestPermission({ mode: 'read' });
+  if (granted !== 'granted') return { ok: false, error: 'permission_denied' };
+  return readHandle(fileHandle);
+}
+
+export function addSite(site) {
   DATA.sites.push(site);
-  appendAudit({ user, action: 'CREATE', site_id: site.site_id, new_value: site.site_id });
   markDirty();
 }
 
@@ -81,25 +152,13 @@ export function updateSite(siteId, updates, user, changedFields) {
   site.meta.updated_at = new Date().toISOString();
   site.meta.updated_by = user.username;
 
-  for (const field of changedFields) {
-    appendAudit({
-      user,
-      action: 'UPDATE',
-      site_id: siteId,
-      field: field.key,
-      old_value: field.old_value,
-      new_value: field.new_value,
-    });
-  }
-
   markDirty();
 }
 
-export function deleteSite(siteId, user) {
+export function deleteSite(siteId) {
   const index = DATA.sites.findIndex((s) => s.site_id === siteId);
   if (index === -1) return;
   DATA.sites.splice(index, 1);
-  appendAudit({ user, action: 'DELETE', site_id: siteId, old_value: siteId });
   markDirty();
 }
 

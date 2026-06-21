@@ -8,6 +8,8 @@ import { showToast } from '../components/toast.js';
 import { render } from '../render.js';
 
 const TYPOLOGY_OPTIONS = ACQ_FIELDS.find((f) => f.key === 'typology').options;
+const PDF_EXPORT_LIMIT = 100;
+const SPREADSHEET_EXPORT_LIMIT = 5000;
 
 function typologyLabel(value) {
   return t('typology_' + value.replace(/\s+/g, ''));
@@ -22,6 +24,8 @@ function getFilteredSites() {
 
 export function renderExportPage() {
   const sites = getFilteredSites();
+  const overSpreadsheetLimit = sites.length > SPREADSHEET_EXPORT_LIMIT;
+  const overPdfLimit = sites.length > PDF_EXPORT_LIMIT;
 
   return `
     <div class="card pad-md">
@@ -47,19 +51,22 @@ export function renderExportPage() {
         <div class="eicon">📊</div>
         <h4>${t('export_excel')}</h4>
         <p>${t('export_excel_d')}</p>
-        <button class="btn btn-primary btn-sm">${t('btn_download')}</button>
+        <button class="btn btn-primary btn-sm" ${overSpreadsheetLimit ? 'disabled' : ''}>${t('btn_download')}</button>
+        ${overSpreadsheetLimit ? `<p class="export-limit-note">${t('export_limit_spreadsheet').replace('{max}', SPREADSHEET_EXPORT_LIMIT)}</p>` : ''}
       </div>
       <div class="card export-card" id="export-csv">
         <div class="eicon">🧾</div>
         <h4>${t('export_csv')}</h4>
         <p>${t('export_csv_d')}</p>
-        <button class="btn btn-primary btn-sm">${t('btn_download')}</button>
+        <button class="btn btn-primary btn-sm" ${overSpreadsheetLimit ? 'disabled' : ''}>${t('btn_download')}</button>
+        ${overSpreadsheetLimit ? `<p class="export-limit-note">${t('export_limit_spreadsheet').replace('{max}', SPREADSHEET_EXPORT_LIMIT)}</p>` : ''}
       </div>
       <div class="card export-card" id="export-pdf">
         <div class="eicon">🗎</div>
         <h4>${t('export_pdf')}</h4>
         <p>${t('export_pdf_d')}</p>
-        <button class="btn btn-primary btn-sm">${t('btn_download')}</button>
+        <button class="btn btn-primary btn-sm" ${overPdfLimit ? 'disabled' : ''}>${t('btn_download')}</button>
+        ${overPdfLimit ? `<p class="export-limit-note">${t('export_limit_pdf').replace('{max}', PDF_EXPORT_LIMIT)}</p>` : ''}
       </div>
     </div>
   `;
@@ -76,15 +83,30 @@ export function bindExportPageEvents() {
   });
 
   document.getElementById('export-excel')?.addEventListener('click', () => {
-    exportToExcel(getFilteredSites(), getLanguage());
+    const sites = getFilteredSites();
+    if (sites.length > SPREADSHEET_EXPORT_LIMIT) {
+      showToast(t('export_limit_spreadsheet').replace('{max}', SPREADSHEET_EXPORT_LIMIT), 'error');
+      return;
+    }
+    exportToExcel(sites, getLanguage());
     showToast(t('export_done'));
   });
   document.getElementById('export-csv')?.addEventListener('click', () => {
-    exportToCSV(getFilteredSites());
+    const sites = getFilteredSites();
+    if (sites.length > SPREADSHEET_EXPORT_LIMIT) {
+      showToast(t('export_limit_spreadsheet').replace('{max}', SPREADSHEET_EXPORT_LIMIT), 'error');
+      return;
+    }
+    exportToCSV(sites);
     showToast(t('export_done'));
   });
   document.getElementById('export-pdf')?.addEventListener('click', () => {
-    exportToPDF(getFilteredSites(), getLanguage());
+    const sites = getFilteredSites();
+    if (sites.length > PDF_EXPORT_LIMIT) {
+      showToast(t('export_limit_pdf').replace('{max}', PDF_EXPORT_LIMIT), 'error');
+      return;
+    }
+    exportToPDF(sites, getLanguage());
     showToast(t('export_done'));
   });
 }
