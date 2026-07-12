@@ -116,7 +116,26 @@ function fieldInputHtml(sectionKey, field, value) {
     return `
       <div class="field" style="margin:0;grid-column:span 3;">
         <label>${t(field.label_key)}</label>
-        <textarea rows="2" data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">${escapeHtml(value)}</textarea>
+        <textarea rows="3" data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">${escapeHtml(value)}</textarea>
+      </div>`;
+  }
+  if (field.type === 'currency') {
+    return `
+      <div class="field" style="margin:0;">
+        <label>${t(field.label_key)}</label>
+        <div class="cur-input">
+          <span class="cur-sym">EGP</span>
+          <input type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(value)}"
+            data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">
+        </div>
+      </div>`;
+  }
+  if (field.type === 'tel') {
+    return `
+      <div class="field" style="margin:0;">
+        <label>${t(field.label_key)}</label>
+        <input type="tel" inputmode="numeric" pattern="[0-9]*" value="${escapeHtml(value)}"
+          data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input digits-only">
       </div>`;
   }
   const dateErr = field.type === 'date' && UI.dateErrors ? UI.dateErrors[field.key] : '';
@@ -246,6 +265,15 @@ export function bindSiteFormPageEvents() {
     cb.addEventListener('change', () => {
       formDraft[cb.dataset.sec][cb.dataset.key] = cb.checked;
       render();
+    });
+  });
+
+  // Numbers-only fields (e.g. Owner Phone): strip anything that isn't a digit as the user types.
+  document.querySelectorAll('.digits-only').forEach((inp) => {
+    inp.addEventListener('input', () => {
+      const cleaned = inp.value.replace(/\D/g, '');
+      if (inp.value !== cleaned) inp.value = cleaned;
+      formDraft[inp.dataset.sec][inp.dataset.key] = inp.value;
     });
   });
 

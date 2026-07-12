@@ -152,6 +152,24 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent);
 }
 
+/* Currency input (EGP prefix) */
+.cur-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cur-input .cur-sym {
+  position: absolute;
+  inset-inline-start: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  pointer-events: none;
+}
+.cur-input input {
+  padding-inline-start: 44px;
+}
+
 /* Modal */
 .overlay {
   position: fixed;

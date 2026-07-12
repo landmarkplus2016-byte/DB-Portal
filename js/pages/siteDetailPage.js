@@ -30,7 +30,16 @@ function fieldDispHtml(site, field) {
     return `<div class="field-disp"><div class="lbl">${t(field.label_key)}</div><div class="val">${chip}</div></div>`;
   }
 
-  const display = field.type === 'date' ? (value ? fmtDate(value) : '') : value;
+  const display =
+    field.type === 'date'
+      ? value
+        ? fmtDate(value)
+        : ''
+      : field.type === 'currency'
+      ? value === '' || value == null
+        ? ''
+        : `${value} EGP`
+      : value;
   return `
     <div class="field-disp">
       <div class="lbl">${t(field.label_key)}</div>

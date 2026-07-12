@@ -13,7 +13,16 @@ function buildFields(section, defs) {
 
 // The ACQ fields whose options are admin-configurable in Admin → Settings.
 // Their option lists live in DATA.meta.field_options[key] and are saved to the JSON file.
-export const LIST_FIELD_KEYS = ['typology', 'sf3_status', 'sf51_doc', 'power_source'];
+export const LIST_FIELD_KEYS = [
+  'typology',
+  'sf3_status',
+  'sf51_doc',
+  'power_source',
+  'acquisition_manager',
+  'negotiator',
+  'surveyor',
+  'permitted_by',
+];
 
 // Fallback options used when the data file has no configured list for a field yet.
 export const DEFAULT_FIELD_OPTIONS = {
@@ -21,6 +30,10 @@ export const DEFAULT_FIELD_OPTIONS = {
   power_source: ['Grid', 'Generator', 'Solar', 'Other'],
   sf3_status: [],
   sf51_doc: [],
+  acquisition_manager: [],
+  negotiator: [],
+  surveyor: [],
+  permitted_by: [],
 };
 
 // Current options for a list field: admin-configured value if present, else the default.
@@ -38,19 +51,19 @@ export const ACQ_FIELDS = buildFields('acq', [
   { key: 'option_coords', type: 'text' },
   { key: 'dis_from_nom', type: 'text' },
   { key: 'option', type: 'text' },
-  { key: 'acquisition_manager', type: 'text' },
-  { key: 'negotiator', type: 'text' },
+  { key: 'acquisition_manager', type: 'select', list: true },
+  { key: 'negotiator', type: 'select', list: true },
   { key: 'survey_date', type: 'date' },
-  { key: 'surveyor', type: 'text' },
+  { key: 'surveyor', type: 'select', list: true },
   { key: 'sf2_date', type: 'date' },
   { key: 'typology', type: 'select', list: true },
   { key: 'sf3_date', type: 'date' },
   { key: 'sf3_status', type: 'select', list: true },
-  { key: 'sf3_comment', type: 'text' },
+  { key: 'sf3_comment', type: 'textarea' },
   { key: 'sf4_date', type: 'date' },
   { key: 'owner', type: 'text' },
-  { key: 'rental_value', type: 'text' },
-  { key: 'owner_phone', type: 'text' },
+  { key: 'rental_value', type: 'currency' },
+  { key: 'owner_phone', type: 'tel' },
   { key: 'sf51_doc', type: 'select', list: true },
   { key: 'contract_date', type: 'date' },
   { key: 'req_env_ntra_cover_date', type: 'date' },
@@ -61,18 +74,19 @@ export const ACQ_FIELDS = buildFields('acq', [
   { key: 'agr_cover_date', type: 'date' },
   { key: 'env_cover_date', type: 'date' },
   { key: 'civil_aviation_cover_date', type: 'date' },
-  { key: 'permitted_by', type: 'text' },
+  { key: 'permitted_by', type: 'select', list: true },
   { key: 'agriculture_date', type: 'date' }, // "Agriculture Approval Date"
   { key: 'environment_date', type: 'date' }, // "Environment Approval Date"
   { key: 'power_source', type: 'select', list: true },
+  { key: 'pmq_date', type: 'date' },
+  { key: 'pmq_amount', type: 'currency' },
+  { key: 'initial_pm_installation_date', type: 'date' },
+  { key: 'pm_charge_date', type: 'date' },
   { key: 'agriculture_receipt_date', type: 'date' },
   { key: 'environment_receipt_date', type: 'date' },
   { key: 'civil_aviation_receipt', type: 'text' },
   { key: 'civil_aviation_allowance_receipt_date', type: 'date' },
-  { key: 'pm_charge_receipt', type: 'text' },
-  { key: 'pmq_amount', type: 'text' },
-  { key: 'pmq_date', type: 'date' },
-  { key: 'cooperation', type: 'text' },
+  { key: 'cooperation', type: 'textarea' },
   { key: 'ntra_initial_approval_date', type: 'date' },
   { key: 'civil_aviation_approval_date', type: 'date' },
   { key: 'administrative_certificate_date', type: 'date' },

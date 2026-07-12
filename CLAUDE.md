@@ -178,13 +178,14 @@ This account exists only in memory. It is never written to any JSON. The real ad
         "agriculture_date": "",
         "environment_date": "",
         "power_source": "",
+        "pmq_date": "",
+        "pmq_amount": "",
+        "initial_pm_installation_date": "",
+        "pm_charge_date": "",
         "agriculture_receipt_date": "",
         "environment_receipt_date": "",
         "civil_aviation_receipt": "",
         "civil_aviation_allowance_receipt_date": "",
-        "pm_charge_receipt": "",
-        "pmq_amount": "",
-        "pmq_date": "",
         "cooperation": "",
         "ntra_initial_approval_date": "",
         "civil_aviation_approval_date": "",
@@ -266,7 +267,9 @@ Status is computed at render time by `deriveStatus(site)` in `js/utils/siteStatu
 
 ## ACQ Dropdown Lists — Admin-Configurable
 
-Four ACQ fields are dropdowns whose options are managed by the admin, not hardcoded: **Typology**, **SF3 Status**, **SF51 Document**, **Power Source** (`LIST_FIELD_KEYS` in `js/constants/fields.js`). (**SF3 Comment** is a plain text field, not a list.)
+Several ACQ fields are dropdowns whose options are managed by the admin, not hardcoded — see `LIST_FIELD_KEYS` in `js/constants/fields.js`: **Typology**, **SF3 Status**, **SF51 Document**, **Power Source**, **Acquisition Manager**, **Negotiator**, **Surveyor**, **Permitted By**. (**SF3 Comment** is a long text field, not a list.)
+
+Non-text ACQ input types: `currency` (Rental Value, PMQ Amount — numeric, shown with an `EGP` prefix and suffix in detail), `tel` (Owner Phone — digits only, non-digits stripped on input), `textarea` (SF3 Comment, Cooperation, Comments), and `date`. Rendering for each lives in `fieldInputHtml()` (`js/pages/siteFormPage.js`) and `fieldDispHtml()` (`js/pages/siteDetailPage.js`).
 
 - Options live in `data.meta.field_options[key]` (a string array per key) and are saved to the shared JSON file like any other data — viewers see new options after they **Refresh**.
 - The admin edits them in **Admin → Settings** (one option per line per field).
