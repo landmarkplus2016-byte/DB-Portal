@@ -117,7 +117,13 @@ This account exists only in memory. It is never written to any JSON. The real ad
     "version": "1.0",
     "exported_at": "2024-05-10T14:30:00",
     "exported_by": "ahmed.hassan",
-    "server_base_path": "Z:\\sites\\"
+    "server_base_path": "Z:\\sites\\",
+    "field_options": {
+      "typology": ["Rooftop", "Greenfield", "Indoor", "Street level"],
+      "sf3_comment": [],
+      "sf51_doc": [],
+      "power_source": ["Grid", "Generator", "Solar", "Other"]
+    }
   },
   "users": [
     {
@@ -145,33 +151,51 @@ This account exists only in memory. It is never written to any JSON. The real ad
         "option_coords": "",
         "dis_from_nom": "",
         "option": "",
+        "acquisition_manager": "",
+        "negotiator": "",
+        "survey_date": "",
+        "surveyor": "",
         "sf2_date": "",
         "typology": "",
-        "sf3_comment": "",
-        "sf51_doc": "",
         "sf3_date": "",
-        "contract_date": "",
-        "initial_pm_date": "",
-        "final_pm_date": "",
-        "negotiator": "",
-        "surveyor": "",
-        "survey_date": "",
-        "initial_permit_date": "",
-        "permitted_by": "",
-        "power_source": "",
-        "acquisition_manager": "",
+        "sf3_comment": "",
+        "sf4_date": "",
         "owner": "",
         "rental_value": "",
         "owner_phone": "",
-        "final_permit_date": "",
+        "sf51_doc": "",
+        "contract_date": "",
+        "req_env_ntra_cover_date": "",
+        "req_army_approval_date": "",
+        "req_ntra_initial_approval_date": "",
+        "req_agr_ntra_cover_date": "",
+        "req_civil_aviation_ntra_cover_date": "",
+        "agr_cover_date": "",
+        "env_cover_date": "",
+        "civil_aviation_cover_date": "",
+        "permitted_by": "",
+        "agriculture_date": "",
         "environment_date": "",
-        "comments": "",
-        "agriculture_receipt": false,
-        "environment_receipt": false,
-        "civil_aviation_receipt": false,
-        "pm_charge_receipt": false,
-        "cooperation": false,
-        "agriculture_date": ""
+        "power_source": "",
+        "agriculture_receipt_date": "",
+        "environment_receipt_date": "",
+        "civil_aviation_receipt": "",
+        "civil_aviation_allowance_receipt_date": "",
+        "pm_charge_receipt": "",
+        "pmq_amount": "",
+        "pmq_date": "",
+        "cooperation": "",
+        "ntra_initial_approval_date": "",
+        "civil_aviation_approval_date": "",
+        "administrative_certificate_date": "",
+        "army_permit_fees_date": "",
+        "fence_permission_fees_date": "",
+        "initial_permit_date": "",
+        "initial_power_letter_date": "",
+        "ntra_certificate_date": "",
+        "final_permit_date": "",
+        "final_pm_date": "",
+        "comments": ""
       },
       "sta": {
         "consultant_office": "",
@@ -236,6 +260,26 @@ Status is computed at render time by `deriveStatus(site)` in `js/utils/siteStatu
 | `Complete` | `acq.contract_date` is filled **AND** `acceptance.fac === true` |
 | `In progress` | `acq.contract_date` is filled **OR** any section has at least one non-empty/non-false field |
 | `New` | Nothing filled except `site_id` |
+
+---
+
+## ACQ Dropdown Lists — Admin-Configurable
+
+Four ACQ fields are dropdowns whose options are managed by the admin, not hardcoded: **Typology**, **SF3 Comment**, **SF51 Document**, **Power Source** (`LIST_FIELD_KEYS` in `js/constants/fields.js`).
+
+- Options live in `data.meta.field_options[key]` (a string array per key) and are saved to the shared JSON file like any other data — viewers see new options after they **Refresh**.
+- The admin edits them in **Admin → Settings** (one option per line per field).
+- `getFieldOptions(key)` returns the configured list, falling back to `DEFAULT_FIELD_OPTIONS[key]` when the data file has none yet. Always read options through this helper — never hardcode a field's options in a page/component.
+- A stored value that is no longer in the configured list is still shown in the form dropdown (so editing an existing site never silently drops its value).
+- The dashboard/site-list/export typology labels fall back to the raw value for custom (untranslated) options.
+
+## ACQ Date-Order Validation
+
+Date fields in the ACQ section must be chronologically non-decreasing **in their `ACQ_FIELDS` list order**: a filled date cannot be earlier than the most recent filled date listed above it. Equal dates are allowed; blank fields are skipped.
+
+- Implemented by `validateAcqDates(acq)` in `js/pages/siteFormPage.js`, which returns `{ field_key: message }` for every violating field.
+- Runs live when a date is changed (inline error under the field) **and** on Save, where any violation **blocks** the save (`err_date_order` / `err_date_order_toast`). This is the only cross-field validation; do not store or derive anything from it.
+- Reordering `ACQ_FIELDS` changes the validation chain — treat that array's order as authoritative.
 
 ---
 
@@ -340,7 +384,9 @@ lmp-acq-db/
 │   │   ├── siteDetailPage.js        # renderSiteDetailPage() + bindSiteDetailEvents()
 │   │   ├── siteFormPage.js          # renderSiteFormPage() + bindSiteFormEvents()
 │   │   ├── exportPage.js            # renderExportPage() + bindExportEvents() — enforces the Export Limits caps
-│   │   └── adminPage.js             # renderAdminPage() + bindAdminEvents() — Users + Permissions tabs only (no Audit Log tab)
+│   │   └── adminPage.js             # renderAdminPage() + bindAdminEvents() — Users + Permissions + Settings tabs (no Audit Log tab).
+│   │                                 #   Settings tab (admin-only, since the whole page is admin-only) edits the ACQ dropdown
+│   │                                 #   lists (data.meta.field_options) and the server base path.
 │   │
 │   ├── components/
 │   │   ├── sidebar.js               # renderSidebar()
@@ -361,7 +407,9 @@ lmp-acq-db/
 │   │   └── theme.js                 # THEMES, getTheme(), setTheme(theme) — reads/writes localStorage 'lmp_theme'
 │   │
 │   └── constants/
-│       └── fields.js                # ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, ALL_FIELDS
+│       └── fields.js                # ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, ALL_FIELDS,
+│                                     #   plus LIST_FIELD_KEYS + getFieldOptions(key) for the admin-configurable ACQ dropdowns.
+│                                     #   ACQ_FIELDS order is authoritative: it drives both form layout AND the date-order chain.
 │
 ├── favicon.ico
 └── back-ground.png                  # App-wide background art (world-map tech graphic), referenced from

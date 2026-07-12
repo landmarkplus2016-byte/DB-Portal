@@ -5,9 +5,10 @@ import { buildFolderPath } from '../utils/filePaths.js';
 import { escapeHtml } from '../utils/format.js';
 import { modalHtml, bindModalDismiss } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
+import { LIST_FIELD_KEYS, getFieldOptions } from '../constants/fields.js';
 import { render } from '../render.js';
 
-const ADMIN_TABS = ['users', 'permissions'];
+const ADMIN_TABS = ['users', 'permissions', 'settings'];
 
 let userModal = null; // { mode: 'add' | 'edit', userId: string|null, passwordUnlocked: boolean, error: string }
 let permAccessDraft = {}; // { [user_id]: 'all' | 'assigned' | 'region' } — unsaved radio selection per row
@@ -159,14 +160,32 @@ function permissionsTabHtml() {
   return `<div class="card pad-md">${rows}</div>`;
 }
 
-/* ================= SETTINGS ================= */
+/* ================= SETTINGS TAB ================= */
 
-function settingsSectionHtml() {
+function listEditorsHtml() {
+  const editors = LIST_FIELD_KEYS.map(
+    (key) => `
+      <div class="field">
+        <label>${t('field_' + key)}</label>
+        <textarea id="listopt-${key}" rows="4" placeholder="${t('settings_list_placeholder')}">${escapeHtml(getFieldOptions(key).join('\n'))}</textarea>
+      </div>`
+  ).join('');
+
+  return `
+    <div class="card pad-md" style="max-width:520px;">
+      <p class="chart-title">${t('settings_lists_title')}</p>
+      <p style="font-size:11px;color:var(--muted);margin:-4px 0 12px;">${t('settings_lists_note')}</p>
+      ${editors}
+      <button class="btn btn-primary btn-sm" id="btn-save-lists">${t('btn_save')}</button>
+    </div>`;
+}
+
+function basePathSettingsHtml() {
   const basePath = DATA.meta.server_base_path || '';
   const preview = buildFolderPath('[SITE-ID]', basePath || 'Z:\\sites\\');
 
   return `
-    <div class="card pad-md" style="margin-top:24px;max-width:420px;">
+    <div class="card pad-md" style="margin-top:18px;max-width:520px;">
       <p class="chart-title">${t('settings_title')}</p>
       <div class="field">
         <label>${t('settings_base_path')}</label>
@@ -178,18 +197,21 @@ function settingsSectionHtml() {
     </div>`;
 }
 
+function settingsTabHtml() {
+  return `${listEditorsHtml()}${basePathSettingsHtml()}`;
+}
+
 /* ================= PAGE ================= */
 
 export function renderAdminPage() {
   const tab = UI.adminTab || 'users';
   const tabsHtml = ADMIN_TABS.map((tb) => `<button class="${tab === tb ? 'active' : ''}" data-admintab="${tb}">${t('tab_' + tb)}</button>`).join('');
 
-  const body = tab === 'permissions' ? permissionsTabHtml() : usersTabHtml();
+  const body = tab === 'permissions' ? permissionsTabHtml() : tab === 'settings' ? settingsTabHtml() : usersTabHtml();
 
   return `
     <div class="admin-tabs">${tabsHtml}</div>
     ${body}
-    ${settingsSectionHtml()}
     ${userModal ? userModalHtml() : ''}
   `;
 }
@@ -366,6 +388,21 @@ function bindSettingsEvents() {
   document.getElementById('btn-save-settings')?.addEventListener('click', () => {
     const value = document.getElementById('settings-basepath').value.trim();
     updateMeta({ server_base_path: value });
+    showToast(t('settings_saved'));
+    render();
+  });
+
+  document.getElementById('btn-save-lists')?.addEventListener('click', () => {
+    const fieldOptions = { ...(DATA.meta.field_options || {}) };
+    LIST_FIELD_KEYS.forEach((key) => {
+      const ta = document.getElementById('listopt-' + key);
+      if (!ta) return;
+      fieldOptions[key] = ta.value
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    });
+    updateMeta({ field_options: fieldOptions });
     showToast(t('settings_saved'));
     render();
   });

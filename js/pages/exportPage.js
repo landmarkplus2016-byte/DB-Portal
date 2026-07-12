@@ -2,17 +2,19 @@ import { DATA, CURRENT_USER, UI } from '../state.js';
 import { t, getLanguage } from '../i18n/i18n.js';
 import { filterSitesByPermissions } from '../utils/permissions.js';
 import { deriveStatus } from '../utils/siteStatus.js';
-import { ACQ_FIELDS } from '../constants/fields.js';
+import { getFieldOptions } from '../constants/fields.js';
 import { exportToExcel, exportToCSV, exportToPDF } from '../utils/exportHelpers.js';
+import { escapeHtml } from '../utils/format.js';
 import { showToast } from '../components/toast.js';
 import { render } from '../render.js';
 
-const TYPOLOGY_OPTIONS = ACQ_FIELDS.find((f) => f.key === 'typology').options;
 const PDF_EXPORT_LIMIT = 100;
 const SPREADSHEET_EXPORT_LIMIT = 5000;
 
 function typologyLabel(value) {
-  return t('typology_' + value.replace(/\s+/g, ''));
+  const key = 'typology_' + value.replace(/\s+/g, '');
+  const tr = t(key);
+  return tr === key ? value : tr;
 }
 
 function getFilteredSites() {
@@ -39,9 +41,9 @@ export function renderExportPage() {
         </select>
         <select id="ex-typology">
           <option value="">${t('filter_typology_all')}</option>
-          ${TYPOLOGY_OPTIONS.map(
-            (ty) => `<option value="${ty}" ${UI.exTypology === ty ? 'selected' : ''}>${typologyLabel(ty)}</option>`
-          ).join('')}
+          ${getFieldOptions('typology')
+            .map((ty) => `<option value="${escapeHtml(ty)}" ${UI.exTypology === ty ? 'selected' : ''}>${typologyLabel(ty)}</option>`)
+            .join('')}
         </select>
       </div>
     </div>

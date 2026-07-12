@@ -2,7 +2,7 @@ import { DATA, CURRENT_USER, UI, ROUTE_PARAM } from '../state.js';
 import { t } from '../i18n/i18n.js';
 import { go } from '../router.js';
 import { addSite, updateSite } from '../data/dataActions.js';
-import { ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, FILE_SECTION_OPTIONS } from '../constants/fields.js';
+import { ACQ_FIELDS, STA_FIELDS, CONSTRUCTION_FIELDS, ACCEPTANCE_FIELDS, FILE_SECTION_OPTIONS, getFieldOptions } from '../constants/fields.js';
 import { buildFolderPath, buildFilePath } from '../utils/filePaths.js';
 import { fmtDate, escapeHtml } from '../utils/format.js';
 import { showToast } from '../components/toast.js';
@@ -32,6 +32,48 @@ function blankSiteDraft() {
   };
 }
 
+// Ensure every field for a section exists on the draft with a type-appropriate default.
+// Handles older data files that predate new fields, and fields whose type changed
+// (e.g. a former yes/no checkbox that is now a text box) — stale booleans become ''.
+function normalizeSection(obj, fields) {
+  const out = obj || {};
+  fields.forEach((f) => {
+    const cur = out[f.key];
+    if (f.type === 'checkbox') {
+      out[f.key] = cur === true;
+    } else {
+      out[f.key] = cur == null || typeof cur === 'boolean' ? '' : cur;
+    }
+  });
+  return out;
+}
+
+function normalizeDraft() {
+  normalizeSection(formDraft.acq, ACQ_FIELDS);
+  normalizeSection(formDraft.sta, STA_FIELDS);
+  normalizeSection(formDraft.construction, CONSTRUCTION_FIELDS);
+  normalizeSection(formDraft.acceptance, ACCEPTANCE_FIELDS);
+  if (!Array.isArray(formDraft.files)) formDraft.files = [];
+}
+
+// Date-order rule: each filled date in the ACQ list cannot be earlier than the most
+// recent filled date listed above it. Blanks are skipped; equal dates are allowed.
+// Returns a map of { field_key: error_message } for every violating field.
+function validateAcqDates(acq) {
+  const errors = {};
+  let prev = null; // { val, label_key } of the last valid, filled date above
+  ACQ_FIELDS.filter((f) => f.type === 'date').forEach((f) => {
+    const val = acq[f.key];
+    if (!val) return;
+    if (prev && val < prev.val) {
+      errors[f.key] = t('err_date_order').replace('{field}', t(f.label_key)).replace('{prev}', t(prev.label_key));
+    } else {
+      prev = { val, label_key: f.label_key };
+    }
+  });
+  return errors;
+}
+
 function sectionHasData(sectionKey) {
   if (sectionKey === 'files') return formDraft.files.length > 0;
   return Object.values(formDraft[sectionKey]).some((v) => (typeof v === 'boolean' ? v === true : !!v));
@@ -58,12 +100,15 @@ function fieldInputHtml(sectionKey, field, value) {
       </div>`;
   }
   if (field.type === 'select') {
+    // Admin-configured options; keep the current value even if it's no longer in the list.
+    const options = getFieldOptions(field.key);
+    const opts = value && !options.includes(value) ? [value, ...options] : options;
     return `
       <div class="field" style="margin:0;">
         <label>${t(field.label_key)}</label>
         <select data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">
           <option value="">—</option>
-          ${field.options.map((o) => `<option value="${escapeHtml(o)}" ${value === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+          ${opts.map((o) => `<option value="${escapeHtml(o)}" ${value === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
         </select>
       </div>`;
   }
@@ -74,10 +119,13 @@ function fieldInputHtml(sectionKey, field, value) {
         <textarea rows="2" data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">${escapeHtml(value)}</textarea>
       </div>`;
   }
+  const dateErr = field.type === 'date' && UI.dateErrors ? UI.dateErrors[field.key] : '';
   return `
     <div class="field" style="margin:0;">
       <label>${t(field.label_key)}</label>
-      <input type="${field.type === 'date' ? 'date' : 'text'}" value="${escapeHtml(value)}" data-sec="${sectionKey}" data-key="${field.key}" class="form-field-input">
+      <input type="${field.type === 'date' ? 'date' : 'text'}" value="${escapeHtml(value)}" data-sec="${sectionKey}" data-key="${field.key}"
+        class="form-field-input${dateErr ? ' input-err' : ''}">
+      ${dateErr ? `<div class="err">${escapeHtml(dateErr)}</div>` : ''}
     </div>`;
 }
 
@@ -148,9 +196,11 @@ export function renderSiteFormPage() {
 
   if (!formDraft || draftParam !== ROUTE_PARAM) {
     formDraft = isNew ? blankSiteDraft() : JSON.parse(JSON.stringify(existingSite));
+    normalizeDraft();
     draftParam = ROUTE_PARAM;
     UI.formTab = 'acq';
     UI.siteIdErr = '';
+    UI.dateErrors = {};
   }
 
   const tabKeys = [...SECTIONS.map((s) => s.key), 'files'];
@@ -184,6 +234,12 @@ export function bindSiteFormPageEvents() {
   document.querySelectorAll('.form-field-input').forEach((inp) => {
     inp.addEventListener('change', () => {
       formDraft[inp.dataset.sec][inp.dataset.key] = inp.value;
+      // Re-check the date chain live so the user sees an ordering error as soon as they pick a date.
+      if (inp.type === 'date') {
+        syncFormInputs();
+        UI.dateErrors = validateAcqDates(formDraft.acq);
+        render();
+      }
     });
   });
   document.querySelectorAll('.form-field-cb').forEach((cb) => {
@@ -267,6 +323,14 @@ export function bindSiteFormPageEvents() {
     const isNew = ROUTE_PARAM === 'new';
     if (isNew && DATA.sites.some((s) => s.site_id === formDraft.site_id)) {
       UI.siteIdErr = t('field_duplicate');
+      render();
+      return;
+    }
+
+    UI.dateErrors = validateAcqDates(formDraft.acq);
+    if (Object.keys(UI.dateErrors).length) {
+      UI.formTab = 'acq';
+      showToast(t('err_date_order_toast'), 'error');
       render();
       return;
     }

@@ -4,18 +4,20 @@ import { go } from '../router.js';
 import { filterSitesByPermissions } from '../utils/permissions.js';
 import { deriveStatus } from '../utils/siteStatus.js';
 import { statusBadgeHtml } from '../components/badge.js';
-import { ACQ_FIELDS } from '../constants/fields.js';
+import { getFieldOptions } from '../constants/fields.js';
 import { fmtDate, escapeHtml } from '../utils/format.js';
 import { render } from '../render.js';
 
-const TYPOLOGY_OPTIONS = ACQ_FIELDS.find((f) => f.key === 'typology').options;
 const PAGE_SIZE = 50;
 
 let pendingFocus = null;
 
+// Built-in typologies have translated labels; admin-added custom values are shown as-is.
 function typologyLabel(value) {
   if (!value) return '—';
-  return t('typology_' + value.replace(/\s+/g, ''));
+  const key = 'typology_' + value.replace(/\s+/g, '');
+  const tr = t(key);
+  return tr === key ? value : tr;
 }
 
 function getFilteredSites() {
@@ -92,9 +94,9 @@ export function renderSiteListPage() {
       </select>
       <select id="filter-typology">
         <option value="">${t('filter_typology_all')}</option>
-        ${TYPOLOGY_OPTIONS.map(
-          (ty) => `<option value="${escapeHtml(ty)}" ${UI.typologyFilter === ty ? 'selected' : ''}>${typologyLabel(ty)}</option>`
-        ).join('')}
+        ${getFieldOptions('typology')
+          .map((ty) => `<option value="${escapeHtml(ty)}" ${UI.typologyFilter === ty ? 'selected' : ''}>${typologyLabel(ty)}</option>`)
+          .join('')}
       </select>
     </div>
     <div class="results-count">${allSites.length} ${t('sites_label')}</div>
