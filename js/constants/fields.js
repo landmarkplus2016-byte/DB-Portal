@@ -13,13 +13,13 @@ function buildFields(section, defs) {
 
 // The ACQ fields whose options are admin-configurable in Admin → Settings.
 // Their option lists live in DATA.meta.field_options[key] and are saved to the JSON file.
-export const LIST_FIELD_KEYS = ['typology', 'sf3_comment', 'sf51_doc', 'power_source'];
+export const LIST_FIELD_KEYS = ['typology', 'sf3_status', 'sf51_doc', 'power_source'];
 
 // Fallback options used when the data file has no configured list for a field yet.
 export const DEFAULT_FIELD_OPTIONS = {
   typology: ['Rooftop', 'Greenfield', 'Indoor', 'Street level'],
   power_source: ['Grid', 'Generator', 'Solar', 'Other'],
-  sf3_comment: [],
+  sf3_status: [],
   sf51_doc: [],
 };
 
@@ -45,7 +45,8 @@ export const ACQ_FIELDS = buildFields('acq', [
   { key: 'sf2_date', type: 'date' },
   { key: 'typology', type: 'select', list: true },
   { key: 'sf3_date', type: 'date' },
-  { key: 'sf3_comment', type: 'select', list: true },
+  { key: 'sf3_status', type: 'select', list: true },
+  { key: 'sf3_comment', type: 'text' },
   { key: 'sf4_date', type: 'date' },
   { key: 'owner', type: 'text' },
   { key: 'rental_value', type: 'text' },

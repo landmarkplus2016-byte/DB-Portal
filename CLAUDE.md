@@ -120,7 +120,7 @@ This account exists only in memory. It is never written to any JSON. The real ad
     "server_base_path": "Z:\\sites\\",
     "field_options": {
       "typology": ["Rooftop", "Greenfield", "Indoor", "Street level"],
-      "sf3_comment": [],
+      "sf3_status": [],
       "sf51_doc": [],
       "power_source": ["Grid", "Generator", "Solar", "Other"]
     }
@@ -158,6 +158,7 @@ This account exists only in memory. It is never written to any JSON. The real ad
         "sf2_date": "",
         "typology": "",
         "sf3_date": "",
+        "sf3_status": "",
         "sf3_comment": "",
         "sf4_date": "",
         "owner": "",
@@ -265,7 +266,7 @@ Status is computed at render time by `deriveStatus(site)` in `js/utils/siteStatu
 
 ## ACQ Dropdown Lists — Admin-Configurable
 
-Four ACQ fields are dropdowns whose options are managed by the admin, not hardcoded: **Typology**, **SF3 Comment**, **SF51 Document**, **Power Source** (`LIST_FIELD_KEYS` in `js/constants/fields.js`).
+Four ACQ fields are dropdowns whose options are managed by the admin, not hardcoded: **Typology**, **SF3 Status**, **SF51 Document**, **Power Source** (`LIST_FIELD_KEYS` in `js/constants/fields.js`). (**SF3 Comment** is a plain text field, not a list.)
 
 - Options live in `data.meta.field_options[key]` (a string array per key) and are saved to the shared JSON file like any other data — viewers see new options after they **Refresh**.
 - The admin edits them in **Admin → Settings** (one option per line per field).
